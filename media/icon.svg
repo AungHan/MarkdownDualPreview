@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1E3252"/>
+      <stop offset="100%" stop-color="#0C1826"/>
+    </linearGradient>
+    <clipPath id="lc">
+      <rect x="8" y="14" width="52" height="100" rx="5"/>
+    </clipPath>
+    <clipPath id="rc">
+      <rect x="68" y="14" width="52" height="100" rx="5"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="128" height="128" rx="20" fill="url(#bg)"/>
+
+  <!-- LEFT PANEL -->
+  <rect x="8" y="14" width="52" height="100" rx="5" fill="#F4F8FD"/>
+  <g clip-path="url(#lc)">
+    <!-- TOC strip -->
+    <rect x="8" y="14" width="13" height="100" fill="#D5E8F8"/>
+    <!-- Top accent bar -->
+    <rect x="8" y="14" width="52" height="6" fill="#3B82F6"/>
+    <!-- TOC section markers -->
+    <rect x="10" y="27" width="9" height="2" rx="1" fill="#3B82F6" opacity="0.65"/>
+    <rect x="10" y="34" width="7" height="1.5" rx="0.75" fill="#3B82F6" opacity="0.35"/>
+    <rect x="11" y="40" width="6" height="1.5" rx="0.75" fill="#3B82F6" opacity="0.35"/>
+    <rect x="10" y="52" width="9" height="2" rx="1" fill="#3B82F6" opacity="0.65"/>
+    <rect x="10" y="59" width="7" height="1.5" rx="0.75" fill="#3B82F6" opacity="0.35"/>
+    <rect x="11" y="65" width="6" height="1.5" rx="0.75" fill="#3B82F6" opacity="0.35"/>
+    <rect x="10" y="77" width="9" height="2" rx="1" fill="#3B82F6" opacity="0.65"/>
+    <rect x="10" y="84" width="7" height="1.5" rx="0.75" fill="#3B82F6" opacity="0.35"/>
+    <!-- Content: section 1 -->
+    <rect x="25" y="25" width="30" height="3.5" rx="1.5" fill="#1E3A5F" opacity="0.8"/>
+    <rect x="25" y="33" width="24" height="2" rx="1" fill="#94B4CE" opacity="0.8"/>
+    <rect x="25" y="38.5" width="27" height="2" rx="1" fill="#94B4CE" opacity="0.8"/>
+    <rect x="25" y="44" width="20" height="2" rx="1" fill="#94B4CE" opacity="0.8"/>
+    <!-- Content: section 2 -->
+    <rect x="25" y="54" width="30" height="3.5" rx="1.5" fill="#1E3A5F" opacity="0.8"/>
+    <rect x="25" y="62" width="25" height="2" rx="1" fill="#94B4CE" opacity="0.8"/>
+    <rect x="25" y="67.5" width="22" height="2" rx="1" fill="#94B4CE" opacity="0.8"/>
+    <rect x="25" y="73" width="28" height="2" rx="1" fill="#94B4CE" opacity="0.8"/>
+    <!-- Content: section 3 -->
+    <rect x="25" y="83" width="30" height="3.5" rx="1.5" fill="#1E3A5F" opacity="0.8"/>
+    <rect x="25" y="91" width="24" height="2" rx="1" fill="#94B4CE" opacity="0.8"/>
+    <rect x="25" y="96.5" width="20" height="2" rx="1" fill="#94B4CE" opacity="0.8"/>
+    <rect x="25" y="102" width="26" height="2" rx="1" fill="#94B4CE" opacity="0.8"/>
+  </g>
+
+  <!-- RIGHT PANEL -->
+  <rect x="68" y="14" width="52" height="100" rx="5" fill="#F4F8FD"/>
+  <g clip-path="url(#rc)">
+    <!-- TOC strip -->
+    <rect x="68" y="14" width="13" height="100" fill="#D5E8F8"/>
+    <!-- Top accent bar -->
+    <rect x="68" y="14" width="52" height="6" fill="#3B82F6"/>
+    <!-- TOC section markers -->
+    <rect x="70" y="27" width="9" height="2" rx="1" fill="#3B82F6" opacity="0.65"/>
+    <rect x="70" y="34" width="7" height="1.5" rx="0.75" fill="#3B82F6" opacity="0.35"/>
+    <rect x="71" y="40" width="6" height="1.5" rx="0.75" fill="#3B82F6" opacity="0.35"/>
+    <rect x="70" y="52" width="9" height="2" rx="1" fill="#3B82F6" opacity="0.65"/>
+    <rect x="70" y="59" width="7" height="1.5" rx="0.75" fill="#3B82F6" opacity="0.35"/>
+    <rect x="71" y="65" width="6" height="1.5" rx="0.75" fill="#3B82F6" opacity="0.35"/>
+    <rect x="70" y="77" width="9" height="2" rx="1" fill="#3B82F6" opacity="0.65"/>
+    <rect x="70" y="84" width="7" height="1.5" rx="0.75" fill="#3B82F6" opacity="0.35"/>
+    <!-- Content: section 1 -->
+    <rect x="85" y="25" width="30" height="3.5" rx="1.5" fill="#1E3A5F" opacity="0.8"/>
+    <rect x="85" y="33" width="24" height="2" rx="1" fill="#94B4CE" opacity="0.8"/>
+    <rect x="85" y="38.5" width="27" height="2" rx="1" fill="#94B4CE" opacity="0.8"/>
+    <rect x="85" y="44" width="20" height="2" rx="1" fill="#94B4CE" opacity="0.8"/>
+    <!-- Content: section 2 -->
+    <rect x="85" y="54" width="30" height="3.5" rx="1.5" fill="#1E3A5F" opacity="0.8"/>
+    <rect x="85" y="62" width="25" height="2" rx="1" fill="#94B4CE" opacity="0.8"/>
+    <rect x="85" y="67.5" width="22" height="2" rx="1" fill="#94B4CE" opacity="0.8"/>
+    <rect x="85" y="73" width="28" height="2" rx="1" fill="#94B4CE" opacity="0.8"/>
+    <!-- Content: section 3 -->
+    <rect x="85" y="83" width="30" height="3.5" rx="1.5" fill="#1E3A5F" opacity="0.8"/>
+    <rect x="85" y="91" width="24" height="2" rx="1" fill="#94B4CE" opacity="0.8"/>
+    <rect x="85" y="96.5" width="20" height="2" rx="1" fill="#94B4CE" opacity="0.8"/>
+    <rect x="85" y="102" width="26" height="2" rx="1" fill="#94B4CE" opacity="0.8"/>
+  </g>
+</svg>

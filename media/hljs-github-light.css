@@ -1,0 +1,96 @@
+/*
+ * highlight.js "GitHub" light theme, scoped to VS Code light themes so it only
+ * applies when the editor is on a light background. Structural rules for
+ * `code.hljs` (display/padding) live in preview.css.
+ */
+
+body.vscode-light .hljs,
+body.vscode-high-contrast-light .hljs {
+  color: #24292e;
+  background-color: #ffffff;
+}
+
+body.vscode-light .hljs-comment,
+body.vscode-light .hljs-quote,
+body.vscode-high-contrast-light .hljs-comment,
+body.vscode-high-contrast-light .hljs-quote {
+  color: #6a737d;
+}
+
+body.vscode-light .hljs-keyword,
+body.vscode-light .hljs-selector-tag,
+body.vscode-light .hljs-subst,
+body.vscode-high-contrast-light .hljs-keyword,
+body.vscode-high-contrast-light .hljs-selector-tag,
+body.vscode-high-contrast-light .hljs-subst {
+  color: #d73a49;
+}
+
+body.vscode-light .hljs-number,
+body.vscode-light .hljs-literal,
+body.vscode-light .hljs-variable,
+body.vscode-light .hljs-template-variable,
+body.vscode-light .hljs-built_in,
+body.vscode-high-contrast-light .hljs-number,
+body.vscode-high-contrast-light .hljs-literal,
+body.vscode-high-contrast-light .hljs-variable,
+body.vscode-high-contrast-light .hljs-template-variable,
+body.vscode-high-contrast-light .hljs-built_in {
+  color: #005cc5;
+}
+
+body.vscode-light .hljs-string,
+body.vscode-light .hljs-doctag,
+body.vscode-light .hljs-regexp,
+body.vscode-high-contrast-light .hljs-string,
+body.vscode-high-contrast-light .hljs-doctag,
+body.vscode-high-contrast-light .hljs-regexp {
+  color: #032f62;
+}
+
+body.vscode-light .hljs-title,
+body.vscode-light .hljs-section,
+body.vscode-light .hljs-selector-id,
+body.vscode-high-contrast-light .hljs-title,
+body.vscode-high-contrast-light .hljs-section,
+body.vscode-high-contrast-light .hljs-selector-id {
+  color: #6f42c1;
+}
+
+body.vscode-light .hljs-tag,
+body.vscode-light .hljs-name,
+body.vscode-light .hljs-attribute,
+body.vscode-high-contrast-light .hljs-tag,
+body.vscode-high-contrast-light .hljs-name,
+body.vscode-high-contrast-light .hljs-attribute {
+  color: #22863a;
+}
+
+body.vscode-light .hljs-symbol,
+body.vscode-light .hljs-bullet,
+body.vscode-light .hljs-meta,
+body.vscode-high-contrast-light .hljs-symbol,
+body.vscode-high-contrast-light .hljs-bullet,
+body.vscode-high-contrast-light .hljs-meta {
+  color: #e36209;
+}
+
+body.vscode-light .hljs-deletion,
+body.vscode-high-contrast-light .hljs-deletion {
+  background-color: #ffeef0;
+}
+
+body.vscode-light .hljs-addition,
+body.vscode-high-contrast-light .hljs-addition {
+  background-color: #f0fff4;
+}
+
+body.vscode-light .hljs-emphasis,
+body.vscode-high-contrast-light .hljs-emphasis {
+  font-style: italic;
+}
+
+body.vscode-light .hljs-strong,
+body.vscode-high-contrast-light .hljs-strong {
+  font-weight: 600;
+}

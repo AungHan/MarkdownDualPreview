@@ -1,0 +1,100 @@
+/*
+ * highlight.js "GitHub Dark" theme, scoped to VS Code dark + high-contrast
+ * (dark) themes. Structural rules for `code.hljs` live in preview.css.
+ */
+
+body.vscode-dark .hljs,
+body.vscode-high-contrast .hljs {
+  color: #c9d1d9;
+  background-color: #161b22;
+}
+
+body.vscode-dark .hljs-comment,
+body.vscode-dark .hljs-quote,
+body.vscode-high-contrast .hljs-comment,
+body.vscode-high-contrast .hljs-quote {
+  color: #8b949e;
+}
+
+body.vscode-dark .hljs-keyword,
+body.vscode-dark .hljs-selector-tag,
+body.vscode-dark .hljs-subst,
+body.vscode-high-contrast .hljs-keyword,
+body.vscode-high-contrast .hljs-selector-tag,
+body.vscode-high-contrast .hljs-subst {
+  color: #ff7b72;
+}
+
+body.vscode-dark .hljs-number,
+body.vscode-dark .hljs-literal,
+body.vscode-dark .hljs-variable,
+body.vscode-dark .hljs-template-variable,
+body.vscode-high-contrast .hljs-number,
+body.vscode-high-contrast .hljs-literal,
+body.vscode-high-contrast .hljs-variable,
+body.vscode-high-contrast .hljs-template-variable {
+  color: #79c0ff;
+}
+
+body.vscode-dark .hljs-string,
+body.vscode-dark .hljs-doctag,
+body.vscode-dark .hljs-regexp,
+body.vscode-high-contrast .hljs-string,
+body.vscode-high-contrast .hljs-doctag,
+body.vscode-high-contrast .hljs-regexp {
+  color: #a5d6ff;
+}
+
+body.vscode-dark .hljs-title,
+body.vscode-dark .hljs-section,
+body.vscode-dark .hljs-selector-id,
+body.vscode-high-contrast .hljs-title,
+body.vscode-high-contrast .hljs-section,
+body.vscode-high-contrast .hljs-selector-id {
+  color: #d2a8ff;
+}
+
+body.vscode-dark .hljs-tag,
+body.vscode-dark .hljs-name,
+body.vscode-dark .hljs-attribute,
+body.vscode-high-contrast .hljs-tag,
+body.vscode-high-contrast .hljs-name,
+body.vscode-high-contrast .hljs-attribute {
+  color: #7ee787;
+}
+
+body.vscode-dark .hljs-built_in,
+body.vscode-dark .hljs-symbol,
+body.vscode-dark .hljs-bullet,
+body.vscode-high-contrast .hljs-built_in,
+body.vscode-high-contrast .hljs-symbol,
+body.vscode-high-contrast .hljs-bullet {
+  color: #ffa657;
+}
+
+body.vscode-dark .hljs-meta,
+body.vscode-high-contrast .hljs-meta {
+  color: #8b949e;
+}
+
+body.vscode-dark .hljs-deletion,
+body.vscode-high-contrast .hljs-deletion {
+  color: #ffdcd7;
+  background-color: #67060c;
+}
+
+body.vscode-dark .hljs-addition,
+body.vscode-high-contrast .hljs-addition {
+  color: #aff5b4;
+  background-color: #033a16;
+}
+
+body.vscode-dark .hljs-emphasis,
+body.vscode-high-contrast .hljs-emphasis {
+  font-style: italic;
+}
+
+body.vscode-dark .hljs-strong,
+body.vscode-high-contrast .hljs-strong {
+  font-weight: 600;
+}
