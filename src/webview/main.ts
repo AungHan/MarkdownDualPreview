@@ -1,5 +1,7 @@
 import type { FromWebviewMessage, ToWebviewMessage } from '../shared/messages';
+import { decorateCodeBlocks } from './codeCopy';
 import { createScrollController } from './scrollController';
+import { createZoomController } from './zoomController';
 import { initTocResizer } from './tocResizer';
 import { renderToc, type TocView } from './tocPane';
 
@@ -9,6 +11,7 @@ const TOC_COLLAPSE_THRESHOLD = 120;
 interface PersistedState {
   collapsed?: boolean;
   width?: number;
+  zoom?: number;
 }
 
 interface VsCodeApi {
@@ -45,6 +48,7 @@ const scroll = createScrollController(
   (line) => post({ type: 'scrollChanged', line }),
   (slug) => tocView?.setActive(slug)
 );
+const zoom = createZoomController(contentEl, () => persistState());
 
 // Restore collapse + width persisted across webview reloads within a session.
 const savedState = vscodeApi.getState() as PersistedState | undefined;
@@ -52,6 +56,9 @@ let paneWidth = clampWidth(savedState?.width ?? DEFAULT_TOC_WIDTH);
 tocPaneEl.style.setProperty('--toc-width', `${paneWidth}px`);
 if (savedState?.collapsed) {
   tocPaneEl.classList.add('collapsed');
+}
+if (savedState?.zoom) {
+  zoom.setLevel(savedState.zoom);
 }
 syncToggleAria();
 
@@ -62,7 +69,8 @@ function clampWidth(width: number): number {
 function persistState(): void {
   const state: PersistedState = {
     collapsed: tocPaneEl.classList.contains('collapsed'),
-    width: paneWidth
+    width: paneWidth,
+    zoom: zoom.level()
   };
   vscodeApi.setState(state);
 }
@@ -103,6 +111,7 @@ window.addEventListener('message', (event: MessageEvent<ToWebviewMessage>) => {
       contentEl.innerHTML = message.html;
       tocView = renderToc(tocListEl, message.toc);
       scroll.rebuild();
+      decorateCodeBlocks(contentEl, (text) => post({ type: 'copyText', text }));
       if (anchor !== null) {
         scroll.revealLine(anchor);
       }
@@ -115,6 +124,11 @@ window.addEventListener('message', (event: MessageEvent<ToWebviewMessage>) => {
       // VS Code toggles the body theme class automatically; the scoped hljs
       // stylesheets react to it, so no explicit work is needed here.
       break;
+    case 'settingsChanged': {
+      const width = message.maxContentWidth > 0 ? `${message.maxContentWidth}px` : 'none';
+      contentEl.style.maxWidth = width;
+      break;
+    }
   }
 });
 

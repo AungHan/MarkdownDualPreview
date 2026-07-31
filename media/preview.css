@@ -161,7 +161,6 @@ body.toc-resizing #toc-pane {
 
 .markdown-body {
   line-height: 1.6;
-  max-width: 900px;
 }
 
 .markdown-body h1,
@@ -224,6 +223,7 @@ body.toc-resizing #toc-pane {
 }
 
 .markdown-body pre {
+  position: relative;
   margin: 0 0 1em;
   overflow: hidden;
 }
@@ -255,4 +255,35 @@ body.toc-resizing #toc-pane {
   border: none;
   border-top: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.35));
   margin: 1.5em 0;
+}
+
+/* ---- Code copy button ------------------------------------------------- */
+
+.code-copy-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 2px 8px;
+  border: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.35));
+  border-radius: 4px;
+  background-color: var(--vscode-editor-background);
+  color: var(--vscode-foreground);
+  font-size: 0.78em;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.markdown-body pre:hover > .code-copy-btn,
+.markdown-body pre:focus-within > .code-copy-btn,
+.code-copy-btn:focus-visible {
+  opacity: 1;
+}
+
+.code-copy-btn:hover {
+  background-color: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.2));
+}
+
+.code-copy-btn.copied {
+  color: var(--vscode-testing-iconPassed, #73c991);
 }

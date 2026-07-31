@@ -11,6 +11,7 @@ const LIVE_UPDATE_DELAY_MS = 300;
 const DEFAULT_MAX_PREVIEWS = 2;
 const MIN_MAX_PREVIEWS = 1;
 const MAX_MAX_PREVIEWS = 3;
+const DEFAULT_MAX_CONTENT_WIDTH = 0;
 
 /**
  * Owns the set of open previews. Enforces the hard cap of two simultaneous
@@ -32,7 +33,12 @@ export class PreviewManager implements vscode.Disposable {
     this.disposables.push(
       vscode.workspace.onDidChangeTextDocument((e) => this.onDocumentChanged(e.document)),
       vscode.workspace.onDidRenameFiles((e) => this.onFilesRenamed(e)),
-      vscode.window.onDidChangeActiveColorTheme((theme) => this.onThemeChanged(theme.kind))
+      vscode.window.onDidChangeActiveColorTheme((theme) => this.onThemeChanged(theme.kind)),
+      vscode.workspace.onDidChangeConfiguration((e) => {
+        if (e.affectsConfiguration(CONFIG_SECTION)) {
+          this.pushSettingsToAll();
+        }
+      })
     );
   }
 
@@ -54,6 +60,16 @@ export class PreviewManager implements vscode.Disposable {
       return DEFAULT_MAX_PREVIEWS;
     }
     return Math.min(Math.max(Math.trunc(configured), MIN_MAX_PREVIEWS), MAX_MAX_PREVIEWS);
+  }
+
+  get maxContentWidth(): number {
+    const configured = vscode.workspace
+      .getConfiguration(CONFIG_SECTION)
+      .get<number>('maxContentWidth', DEFAULT_MAX_CONTENT_WIDTH);
+    if (!Number.isFinite(configured) || configured < 0) {
+      return DEFAULT_MAX_CONTENT_WIDTH;
+    }
+    return Math.trunc(configured);
   }
 
   openPreview(document: vscode.TextDocument): void {
@@ -116,6 +132,7 @@ export class PreviewManager implements vscode.Disposable {
     );
 
     const panel = new PreviewPanel(webviewPanel, document, this.render, this.extensionUri);
+    panel.onReady(() => panel.postSettings(this.maxContentWidth));
     const scrollSync = new ScrollSync(panel);
     // Release by panel identity, not by key: a rename can re-key the panel, so
     // the key captured here may be stale by the time the panel is disposed.
@@ -206,6 +223,13 @@ export class PreviewManager implements vscode.Disposable {
   private onThemeChanged(kind: vscode.ColorThemeKind): void {
     for (const panel of this.panels.values()) {
       panel.postThemeChanged(kind);
+    }
+  }
+
+  private pushSettingsToAll(): void {
+    const width = this.maxContentWidth;
+    for (const panel of this.panels.values()) {
+      panel.postSettings(width);
     }
   }
 }

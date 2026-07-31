@@ -26,6 +26,7 @@ export class PreviewPanel {
   private readonly disposables: vscode.Disposable[] = [];
   private readonly disposeEmitter = new vscode.EventEmitter<void>();
   private scrollHandler: ((line: number) => void) | undefined;
+  private readyHandler: (() => void) | undefined;
 
   constructor(
     private readonly panel: vscode.WebviewPanel,
@@ -49,6 +50,11 @@ export class PreviewPanel {
 
   get isDisposed(): boolean {
     return this.disposed;
+  }
+
+  /** Register a callback fired once when the webview first reports ready. */
+  onReady(handler: () => void): void {
+    this.readyHandler = handler;
   }
 
   /** Register the caller notified when the user scrolls the preview. */
@@ -101,6 +107,10 @@ export class PreviewPanel {
     this.post({ type: 'themeChanged', kind: toThemeKind(kind) });
   }
 
+  postSettings(maxContentWidth: number): void {
+    this.post({ type: 'settingsChanged', maxContentWidth });
+  }
+
   dispose(): void {
     if (this.disposed) {
       return;
@@ -137,12 +147,16 @@ export class PreviewPanel {
     switch (raw.type) {
       case 'ready':
         this.update();
+        this.readyHandler?.();
         break;
       case 'scrollChanged':
         this.scrollHandler?.(raw.line);
         break;
       case 'tocToggled':
         // Collapse state is persisted webview-side via setState; nothing to do here.
+        break;
+      case 'copyText':
+        vscode.env.clipboard.writeText(raw.text).then(undefined, () => undefined);
         break;
     }
   }

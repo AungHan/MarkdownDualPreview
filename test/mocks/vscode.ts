@@ -202,6 +202,7 @@ export const workspace = {
   onDidChangeTextDocumentEmitter: new EventEmitter<unknown>(),
   onDidCloseTextDocumentEmitter: new EventEmitter<unknown>(),
   onDidRenameFilesEmitter: new EventEmitter<unknown>(),
+  onDidChangeConfigurationEmitter: new EventEmitter<unknown>(),
   getConfiguration(section?: string) {
     const prefix = section ? `${section}.` : '';
     return {
@@ -219,6 +220,19 @@ export const workspace = {
   },
   onDidRenameFiles(listener: (e: unknown) => void): Disposable {
     return workspace.onDidRenameFilesEmitter.event(listener);
+  },
+  onDidChangeConfiguration(listener: (e: unknown) => void): Disposable {
+    return workspace.onDidChangeConfigurationEmitter.event(listener);
+  }
+};
+
+export const env = {
+  clipboard: {
+    written: [] as string[],
+    writeText(text: string): Thenable<void> {
+      env.clipboard.written.push(text);
+      return Promise.resolve();
+    }
   }
 };
 
@@ -241,6 +255,7 @@ export const __test = {
     window.activeColorTheme = { kind: ColorThemeKind.Dark };
     workspace.textDocuments.length = 0;
     workspace.configValues.clear();
+    env.clipboard.written.length = 0;
     commands.registered.clear();
   }
 };

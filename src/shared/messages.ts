@@ -24,13 +24,15 @@ export type ThemeKind = 'light' | 'dark' | 'highContrast' | 'highContrastLight';
 export type ToWebviewMessage =
   | { readonly type: 'updateContent'; readonly html: string; readonly toc: readonly TocNode[] }
   | { readonly type: 'revealLine'; readonly line: number }
-  | { readonly type: 'themeChanged'; readonly kind: ThemeKind };
+  | { readonly type: 'themeChanged'; readonly kind: ThemeKind }
+  | { readonly type: 'settingsChanged'; readonly maxContentWidth: number };
 
 /** Messages sent from the webview back to the extension host. */
 export type FromWebviewMessage =
   | { readonly type: 'ready' }
   | { readonly type: 'scrollChanged'; readonly line: number }
-  | { readonly type: 'tocToggled'; readonly collapsed: boolean };
+  | { readonly type: 'tocToggled'; readonly collapsed: boolean }
+  | { readonly type: 'copyText'; readonly text: string };
 
 /** Runtime type guard for messages arriving from the (untrusted) webview. */
 export function isFromWebviewMessage(value: unknown): value is FromWebviewMessage {
@@ -45,6 +47,8 @@ export function isFromWebviewMessage(value: unknown): value is FromWebviewMessag
       return typeof (value as { line?: unknown }).line === 'number';
     case 'tocToggled':
       return typeof (value as { collapsed?: unknown }).collapsed === 'boolean';
+    case 'copyText':
+      return typeof (value as { text?: unknown }).text === 'string';
     default:
       return false;
   }
