@@ -2,7 +2,7 @@
   "name": "markdown-dual-preview",
   "displayName": "Markdown Dual Preview",
   "description": "Preview Markdown files side by side (up to three), each with an embedded section navigation pane.",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "publisher": "aung-han",
   "license": "MIT",
   "repository": {
@@ -68,6 +68,12 @@
           "minimum": 1,
           "maximum": 3,
           "markdownDescription": "Maximum number of preview panels that can be open at the same time (1–3). Lowering this does not close previews that are already open."
+        },
+        "markdownDualPreview.maxContentWidth": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "markdownDescription": "Maximum width of the rendered content in pixels. Set to `0` for full width (no limit). A value like `900` constrains the text column for readability."
         }
       }
     }

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PreviewManager } from '../../src/preview/previewManager';
-import { __test, Uri, window, workspace, type FakeWebviewPanel } from '../mocks/vscode';
+import { __test, env, Uri, window, workspace, type FakeWebviewPanel } from '../mocks/vscode';
 
 function updatesPostedSince(panel: FakeWebviewPanel, since: number): unknown[] {
   return panel.webview.posted
@@ -189,5 +189,74 @@ describe('PreviewManager', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('reads maxContentWidth from settings, defaulting to 0', () => {
+    const manager = new PreviewManager(EXT_URI);
+    expect(manager.maxContentWidth).toBe(0);
+  });
+
+  it('reads a positive maxContentWidth from settings', () => {
+    workspace.configValues.set('markdownDualPreview.maxContentWidth', 900);
+    const manager = new PreviewManager(EXT_URI);
+    expect(manager.maxContentWidth).toBe(900);
+  });
+
+  it('clamps negative maxContentWidth to 0', () => {
+    workspace.configValues.set('markdownDualPreview.maxContentWidth', -100);
+    const manager = new PreviewManager(EXT_URI);
+    expect(manager.maxContentWidth).toBe(0);
+  });
+
+  it('truncates fractional maxContentWidth', () => {
+    workspace.configValues.set('markdownDualPreview.maxContentWidth', 850.7);
+    const manager = new PreviewManager(EXT_URI);
+    expect(manager.maxContentWidth).toBe(850);
+  });
+
+  it('posts settingsChanged when webview reports ready', () => {
+    workspace.configValues.set('markdownDualPreview.maxContentWidth', 700);
+    const manager = new PreviewManager(EXT_URI);
+    open(manager, doc('C:/a.md'));
+    const panel = __test.createdPanels[0];
+    panel.webview.__fireMessage({ type: 'ready' });
+    const settings = panel.webview.posted.find(
+      (m): m is { type: string; maxContentWidth: number } =>
+        typeof m === 'object' && m !== null && (m as { type?: unknown }).type === 'settingsChanged'
+    );
+    expect(settings?.maxContentWidth).toBe(700);
+  });
+
+  it('pushes settingsChanged to all panels on config change', () => {
+    const manager = new PreviewManager(EXT_URI);
+    open(manager, doc('C:/a.md'));
+    open(manager, doc('C:/b.md'));
+    const panelA = __test.createdPanels[0];
+    const panelB = __test.createdPanels[1];
+    const beforeA = panelA.webview.posted.length;
+    const beforeB = panelB.webview.posted.length;
+
+    workspace.configValues.set('markdownDualPreview.maxContentWidth', 600);
+    workspace.onDidChangeConfigurationEmitter.fire({
+      affectsConfiguration: (section: string) => section === 'markdownDualPreview'
+    });
+
+    const settingsA = panelA.webview.posted
+      .slice(beforeA)
+      .find((m) => (m as { type?: unknown }).type === 'settingsChanged');
+    const settingsB = panelB.webview.posted
+      .slice(beforeB)
+      .find((m) => (m as { type?: unknown }).type === 'settingsChanged');
+    expect((settingsA as { maxContentWidth: number }).maxContentWidth).toBe(600);
+    expect((settingsB as { maxContentWidth: number }).maxContentWidth).toBe(600);
+  });
+
+  it('copies text to clipboard when webview posts copyText', () => {
+    const manager = new PreviewManager(EXT_URI);
+    open(manager, doc('C:/a.md'));
+    const panel = __test.createdPanels[0];
+    panel.webview.__fireMessage({ type: 'ready' });
+    panel.webview.__fireMessage({ type: 'copyText', text: 'console.log("hi")' });
+    expect(env.clipboard.written).toContain('console.log("hi")');
   });
 });
