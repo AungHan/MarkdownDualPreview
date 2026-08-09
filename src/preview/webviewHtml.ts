@@ -30,7 +30,10 @@ export function buildWebviewHtml(params: WebviewHtmlParams): string {
     `style-src ${cspSource}`,
     `script-src 'nonce-${nonce}'`,
     `img-src ${cspSource} https: data:`,
-    `font-src ${cspSource}`
+    `font-src ${cspSource}`,
+    // default-src 'none' does not cover form submission; raw HTML is now
+    // rendered (see markdown/sanitize.ts), so this is closed explicitly.
+    `form-action 'none'`
   ].join('; ');
 
   return `<!DOCTYPE html>

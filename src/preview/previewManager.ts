@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { createRenderer, type Renderer } from '../markdown/renderer';
 import { debounce, type Debounced } from '../util/debounce';
 import { docKey } from '../util/docKey';
+import { localResourceRoots } from './localRoots';
 import { PreviewPanel } from './previewPanel';
 import { ScrollSync } from './scrollSync';
 
@@ -124,10 +125,7 @@ export class PreviewManager implements vscode.Disposable {
       {
         enableScripts: true,
         retainContextWhenHidden: true,
-        localResourceRoots: [
-          vscode.Uri.joinPath(this.extensionUri, 'dist'),
-          vscode.Uri.joinPath(this.extensionUri, 'media')
-        ]
+        localResourceRoots: localResourceRoots(this.extensionUri, document.uri)
       }
     );
 

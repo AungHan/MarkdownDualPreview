@@ -251,6 +251,16 @@ describe('PreviewManager', () => {
     expect((settingsB as { maxContentWidth: number }).maxContentWidth).toBe(600);
   });
 
+  it('grants the containing workspace folder as a local resource root', () => {
+    workspace.workspaceFolders = [{ uri: Uri.file('C:/') }];
+    const manager = new PreviewManager(EXT_URI);
+    open(manager, doc('C:/a.md'));
+    const panel = __test.createdPanels[0];
+    const options = panel.createOptions as { localResourceRoots: { toString(): string }[] };
+    const roots = options.localResourceRoots.map((r) => r.toString());
+    expect(roots).toContain(Uri.file('C:/').toString());
+  });
+
   it('copies text to clipboard when webview posts copyText', () => {
     const manager = new PreviewManager(EXT_URI);
     open(manager, doc('C:/a.md'));

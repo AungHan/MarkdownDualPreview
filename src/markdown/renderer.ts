@@ -4,6 +4,7 @@ import hljs from 'highlight.js/lib/common';
 import MarkdownIt from 'markdown-it';
 import type { TocNode } from '../shared/messages';
 import { headingSlugPlugin } from './headingSlugPlugin';
+import { type ResourceRewriter, sanitizeDocumentHtml } from './sanitize';
 import { sourceLinePlugin } from './sourceLinePlugin';
 import { extractToc } from './toc';
 
@@ -12,8 +13,15 @@ export interface RenderResult {
   readonly toc: readonly TocNode[];
 }
 
+export interface RenderOptions {
+  /** Rewrites local `<img src>` references to webview-loadable URIs. Defaults to identity. */
+  readonly rewriteResourceSrc?: ResourceRewriter;
+}
+
 /** A configured render function: Markdown text in, HTML + TOC tree out. */
-export type Renderer = (markdown: string) => RenderResult;
+export type Renderer = (markdown: string, options?: RenderOptions) => RenderResult;
+
+const identityRewriter: ResourceRewriter = (src) => src;
 
 /** Restrict a fenced-code language token to a safe CSS class fragment. */
 function sanitizeLang(lang: string): string {
@@ -24,16 +32,18 @@ function sanitizeLang(lang: string): string {
  * Create a Markdown renderer.
  *
  * Design notes:
- * - `html: false` — raw HTML embedded in Markdown is escaped rather than
- *   rendered. This removes the need for HTML sanitization in v1; documented as
- *   a known limitation in the README.
+ * - `html: true` — raw HTML embedded in Markdown is parsed and rendered. The
+ *   full rendered document is passed through {@link sanitizeDocumentHtml}
+ *   before being returned, so no caller can obtain unsanitized HTML. Sanitizing
+ *   the whole string (rather than per-token) is required because markdown-it
+ *   can split a single HTML element like `<details>` across multiple tokens.
  * - A custom `fence` renderer is used (instead of markdown-it's `highlight`
  *   option) so the `data-line` attribute stamped by {@link sourceLinePlugin}
  *   survives onto the `<pre>` element for scroll sync, while still applying
  *   highlight.js classes.
  */
 export function createRenderer(): Renderer {
-  const md = new MarkdownIt({ html: false, linkify: true, typographer: false });
+  const md = new MarkdownIt({ html: true, linkify: true, typographer: false });
   md.use(sourceLinePlugin);
   md.use(headingSlugPlugin);
 
@@ -63,10 +73,11 @@ export function createRenderer(): Renderer {
     return `<pre${lineAttr}><code class="hljs${langClass}">${body}</code></pre>\n`;
   };
 
-  return (markdown: string): RenderResult => {
+  return (markdown: string, options?: RenderOptions): RenderResult => {
     const tokens = md.parse(markdown, {});
     const toc = extractToc(tokens);
-    const html = md.renderer.render(tokens, md.options, {});
+    const rawHtml = md.renderer.render(tokens, md.options, {});
+    const html = sanitizeDocumentHtml(rawHtml, options?.rewriteResourceSrc ?? identityRewriter);
     return { html, toc };
   };
 }

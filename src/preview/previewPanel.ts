@@ -1,7 +1,52 @@
 import * as vscode from 'vscode';
 import { isFromWebviewMessage, type ThemeKind, type ToWebviewMessage } from '../shared/messages';
 import type { Renderer } from '../markdown/renderer';
+import { classifyResource } from '../markdown/resourcePath';
+import type { ResourceRewriter } from '../markdown/sanitize';
 import { buildWebviewHtml, generateNonce } from './webviewHtml';
+
+/**
+ * The `/`-separated directory containing `uri`'s path, with no trailing slash.
+ * Callers only use this once `uri.scheme === 'file'` is already known.
+ */
+function directoryPathOf(uri: vscode.Uri): string {
+  const segments = uri.path.split('/');
+  segments.pop();
+  return segments.join('/');
+}
+
+/** The open workspace folder containing `uri`, if any. */
+function containingWorkspaceRoot(uri: vscode.Uri): string | undefined {
+  for (const folder of vscode.workspace.workspaceFolders ?? []) {
+    const root = folder.uri.path.replace(/\/$/, '');
+    if (uri.path === root || uri.path.startsWith(`${root}/`)) {
+      return root;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Build the `<img src>` rewriter for one render pass. Non-`file` documents
+ * (e.g. `untitled:`) have no filesystem directory to resolve relative images
+ * against, so every reference is left untouched.
+ */
+function buildResourceRewriter(
+  document: vscode.TextDocument,
+  webview: vscode.Webview
+): ResourceRewriter {
+  if (document.uri.scheme !== 'file') {
+    return (src) => src;
+  }
+  const documentDir = directoryPathOf(document.uri);
+  const workspaceRoot = containingWorkspaceRoot(document.uri);
+  return (src: string): string => {
+    const resolved = classifyResource(src, { documentDir, workspaceRoot });
+    return resolved.kind === 'external'
+      ? src
+      : webview.asWebviewUri(vscode.Uri.file(resolved.path)).toString();
+  };
+}
 
 /** Map a VS Code color theme to the webview's theme family. */
 function toThemeKind(kind: vscode.ColorThemeKind): ThemeKind {
@@ -94,7 +139,8 @@ export class PreviewPanel {
     if (document) {
       this.document = document;
     }
-    const { html, toc } = this.render(this.document.getText());
+    const rewriteResourceSrc = buildResourceRewriter(this.document, this.panel.webview);
+    const { html, toc } = this.render(this.document.getText(), { rewriteResourceSrc });
     this.post({ type: 'updateContent', html, toc });
   }
 

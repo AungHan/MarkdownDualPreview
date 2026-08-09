@@ -23,6 +23,16 @@ describe('buildWebviewHtml', () => {
     expect(html).toContain(`default-src 'none'`);
   });
 
+  it('permits webview-uri, https, and data images (local image rewriting depends on this)', () => {
+    const html = buildWebviewHtml(params);
+    expect(html).toContain(`img-src vscode-webview://abc https: data:`);
+  });
+
+  it('blocks form submission, since default-src none does not cover form-action', () => {
+    const html = buildWebviewHtml(params);
+    expect(html).toContain(`form-action 'none'`);
+  });
+
   it('links all stylesheets and the nav/content structure', () => {
     const html = buildWebviewHtml(params);
     expect(html).toContain('https://host/preview.css');

@@ -39,9 +39,12 @@ Each has its own `tsconfig.json` (`./tsconfig.json` for host, `src/webview/tscon
 
 - **`extension.ts`** — activates once, creates a single `PreviewManager`, registers the `markdownDualPreview.open` command.
 - **`preview/previewManager.ts`** — owns all open previews (capped at 1–3 via `maxPreviews` setting). Manages a `Map<docKey, PreviewPanel>`, debounces live updates at 300 ms, and re-keys panels on file renames so live-update routing stays correct.
-- **`preview/previewPanel.ts`** — wraps one `vscode.WebviewPanel`. Renders content, dispatches typed messages to/from the webview via `ToWebviewMessage`/`FromWebviewMessage`.
+- **`preview/previewPanel.ts`** — wraps one `vscode.WebviewPanel`. Renders content, dispatches typed messages to/from the webview via `ToWebviewMessage`/`FromWebviewMessage`. Builds a per-render `<img src>` rewriter (`buildResourceRewriter`) that resolves relative to the document's directory and its containing workspace folder, then converts local matches to webview URIs via `webview.asWebviewUri`.
 - **`preview/scrollSync.ts`** — bidirectional scroll sync per panel. Editor → preview via `onDidChangeTextEditorVisibleRanges`; preview → editor via `revealRange`. Uses `ScrollSyncGate` to suppress the echo loop.
-- **`markdown/renderer.ts`** — creates a configured `markdown-it` instance with source-line and heading-slug plugins. Returns `{ html, toc }`. Markdown is rendered on the host so markdown-it/highlight.js never ship to the browser.
+- **`preview/localRoots.ts`** — computes the `localResourceRoots` granted to a panel: the extension's `dist`/`media`, every open workspace folder, and the previewed document's own directory. Pure aside from reading `vscode.workspace.workspaceFolders`.
+- **`markdown/renderer.ts`** — creates a configured `markdown-it` instance (`html: true`) with source-line and heading-slug plugins. Returns `{ html, toc }`; the rendered HTML is passed through `sanitizeDocumentHtml` before being returned, so no caller can obtain unsanitized HTML. Markdown is rendered on the host so markdown-it/highlight.js/the sanitizer never ship to the browser.
+- **`markdown/sanitize.ts`** — allowlist-sanitizes a fully rendered HTML string (via `sanitize-html`) and rewrites every `<img src>` through a caller-supplied `ResourceRewriter`. Sanitizes the whole document in one pass, not per-token, because markdown-it can split a single raw-HTML element like `<details>` across multiple tokens.
+- **`markdown/resourcePath.ts`** — pure, dependency-free classifier: given an `<img src>` string and a `{ documentDir, workspaceRoot }` context, decides whether it's `external` (left untouched) or `local` (resolved to an absolute path for rewriting). No `vscode` import, no I/O — fully table-tested.
 - **`markdown/sourceLinePlugin.ts`** — stamps `data-line` attributes on block-level elements for scroll sync target resolution.
 - **`markdown/headingSlugPlugin.ts`** — adds `id` attributes to headings using `github-slugger` for TOC anchor links.
 - **`markdown/toc.ts`** — walks the token stream after parsing and builds a `TocNode[]` tree from heading tokens.
@@ -69,4 +72,6 @@ Dependency-free modules imported by **both** bundles:
 
 ### Content Security Policy
 
-The webview uses a strict CSP (`cspSource` + nonce on the single inline script). All styles load as file URIs; no `unsafe-inline`. The nonce is generated fresh per panel creation in `preview/webviewHtml.ts`.
+The webview uses a strict CSP (`cspSource` + nonce on the single inline script). All styles load as file URIs; no `unsafe-inline`. `img-src` additionally allows `https:` and `data:` so rewritten local images and remote badges both load. `form-action 'none'` is set explicitly — `default-src 'none'` does not cover form submission, and raw HTML (now enabled) can contain a `<form>`. The nonce is generated fresh per panel creation in `preview/webviewHtml.ts`.
+
+Sanitization (`markdown/sanitize.ts`) is a second, independent layer on top of the CSP: it strips `<script>`, event-handler attributes, `<base>`, `<form>`, `<style>` attributes, and disallowed schemes before HTML ever reaches the webview.

@@ -111,6 +111,8 @@ export interface FakeWebviewPanel {
   onDidDispose(listener: () => void): Disposable;
   readonly revealCalls: number;
   disposed: boolean;
+  /** The `options` argument passed to `createWebviewPanel`, for assertions. */
+  readonly createOptions: unknown;
 }
 
 function createWebview(): FakeWebview {
@@ -129,7 +131,7 @@ function createWebview(): FakeWebview {
       return messageEmitter.event(listener);
     },
     asWebviewUri(uri: Uri): Uri {
-      return uri;
+      return Uri.parse(`https://file+.vscode-resource.vscode-cdn.net${uri.path}`);
     },
     __fireMessage(message: unknown): void {
       messageEmitter.fire(message);
@@ -151,7 +153,7 @@ export const window = {
     viewType: string,
     title: string,
     _showOptions: unknown,
-    _options?: unknown
+    options?: unknown
   ): FakeWebviewPanel {
     const disposeEmitter = new EventEmitter<void>();
     let revealCalls = 0;
@@ -160,6 +162,7 @@ export const window = {
       title,
       webview: createWebview(),
       disposed: false,
+      createOptions: options,
       get revealCalls() {
         return revealCalls;
       },
@@ -198,6 +201,7 @@ export const window = {
 
 export const workspace = {
   textDocuments: [] as unknown[],
+  workspaceFolders: undefined as { readonly uri: Uri }[] | undefined,
   configValues: new Map<string, unknown>(),
   onDidChangeTextDocumentEmitter: new EventEmitter<unknown>(),
   onDidCloseTextDocumentEmitter: new EventEmitter<unknown>(),
@@ -254,6 +258,7 @@ export const __test = {
     window.visibleTextEditors.length = 0;
     window.activeColorTheme = { kind: ColorThemeKind.Dark };
     workspace.textDocuments.length = 0;
+    workspace.workspaceFolders = undefined;
     workspace.configValues.clear();
     env.clipboard.written.length = 0;
     commands.registered.clear();
