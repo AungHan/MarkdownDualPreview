@@ -46,7 +46,9 @@ describe('createRenderer', () => {
     const render = createRenderer();
     const { html } = render('```made-up-lang\n<b> & "q"\n```\n');
     expect(html).toContain('<code class="hljs">');
-    expect(html).toContain('&lt;b&gt; &amp; &quot;q&quot;');
+    // `<` and `&` must stay entity-escaped (or the fence content would parse as
+    // markup); a bare quote in text content is valid HTML and round-trips as-is.
+    expect(html).toContain('&lt;b&gt; &amp; "q"');
   });
 
   it('preserves data-line on fenced code blocks', () => {
@@ -55,11 +57,32 @@ describe('createRenderer', () => {
     expect(html).toMatch(/<pre data-line="2"/);
   });
 
-  it('escapes raw HTML instead of rendering it (html: false)', () => {
+  it('renders safe raw HTML as elements instead of escaping it', () => {
+    const render = createRenderer();
+    const { html } = render('<details><summary>x</summary>body</details>\n');
+    expect(html).toContain('<details>');
+    expect(html).toContain('<summary>x</summary>');
+  });
+
+  it('strips raw <script> tags rather than rendering or escaping them', () => {
     const render = createRenderer();
     const { html } = render('<script>alert(1)</script>\n');
     expect(html).not.toContain('<script>');
-    expect(html).toContain('&lt;script&gt;');
+    expect(html).not.toContain('alert(1)');
+  });
+
+  it('does not throw and leaves image src untouched when called with no options', () => {
+    const render = createRenderer();
+    const { html } = render('![alt](./a.png)\n');
+    expect(html).toContain('src="./a.png"');
+  });
+
+  it('applies rewriteResourceSrc to a Markdown-authored image', () => {
+    const render = createRenderer();
+    const { html } = render('![alt](./a.png)\n', {
+      rewriteResourceSrc: (src) => `https://rewritten.test/${src}`
+    });
+    expect(html).toContain('src="https://rewritten.test/./a.png"');
   });
 
   it('extracts plain text from formatted headings', () => {

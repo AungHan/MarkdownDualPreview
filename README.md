@@ -6,6 +6,11 @@ Preview up to **three** Markdown files side by side, each with an embedded
 ## Features
 
 - **Custom Markdown preview** rendered with [markdown-it](https://github.com/markdown-it/markdown-it).
+- **Local images and safe raw HTML** — `![](./docs/shot.png)` and workspace-relative
+  images render correctly, and common README HTML (`<details>`, `<br>`, `<kbd>`,
+  HTML tables) renders as elements instead of literal text. Rendered HTML is passed
+  through an allowlist sanitizer, so `<script>` tags and event-handler attributes are
+  always stripped.
 - **Multiple previews at once** — open previews beside your editor for up to three
   files simultaneously (2 by default, configurable). Opening beyond the cap is
   blocked with a message until you close one.
@@ -17,6 +22,11 @@ Preview up to **three** Markdown files side by side, each with an embedded
 - **Syntax highlighting** for fenced code blocks via
   [highlight.js](https://highlightjs.org/), with GitHub-style theming that adapts
   to your VS Code light / dark / high-contrast theme.
+- **Copy code button** — hover over any fenced code block to reveal a **Copy**
+  button; it briefly shows **Copied!** on success.
+- **Ctrl + scroll zoom** — hold `Ctrl` and scroll inside a preview to zoom the
+  content between 50% and 300% in 10% steps. Zoom level is saved per panel and
+  restored when the panel is reopened.
 
 ## Usage
 
@@ -31,14 +41,19 @@ Preview up to **three** Markdown files side by side, each with an embedded
 | Setting | Default | Description |
 |---|---|---|
 | `markdownDualPreview.maxPreviews` | `2` | Maximum previews open at once (1–3). Lowering it doesn't close previews already open. |
+| `markdownDualPreview.maxContentWidth` | `0` | Maximum width of the rendered content in pixels. `0` means full width. Set to e.g. `900` to constrain the text column for readability. |
 
 ## Known limitations (v1)
 
-- **Raw HTML in Markdown is escaped**, not rendered (`html: false`), so no HTML
-  sanitization is required. Standard Markdown — including fenced code, tables, and
-  task lists — renders normally.
 - **Previews close on a window reload** and reopen with one click; session state
   (scroll, nav collapse) is retained while the window stays open.
+- **The set of folders a preview can load images from is fixed when it opens.** If you
+  add a workspace folder, or a rename moves the document to a new directory, close and
+  reopen the preview to pick up the new folder.
+- **Raw HTML blocks have no scroll-sync anchor**, so scrolling through one interpolates
+  between the nearest Markdown elements above and below it.
+- **`<picture>` renders via its `<img>` fallback only**; `<source srcset>` candidates are
+  not rewritten to local files and are dropped.
 
 ## Development
 
@@ -57,10 +72,20 @@ loaded.
 ## Architecture
 
 - Markdown is rendered in the **extension host** (`src/markdown/*`); the resulting
-  HTML + table-of-contents tree is posted to the webview. This keeps markdown-it
-  and highlight.js out of the browser bundle and makes the pipeline unit testable.
+  HTML + table-of-contents tree is posted to the webview. This keeps markdown-it,
+  highlight.js, and the HTML sanitizer out of the browser bundle and makes the
+  pipeline unit testable. `sanitize.ts` allowlist-sanitizes the fully rendered
+  document (raw HTML is enabled) and rewrites local `<img src>` references —
+  from both Markdown syntax and raw HTML — to webview-loadable URIs via
+  `resourcePath.ts`, a pure module that classifies each reference as remote or
+  workspace-local.
 - `src/preview/previewManager.ts` enforces the two-preview cap, reuses an existing
   preview when the same file is reopened, and drives live updates and theming.
+  `localRoots.ts` computes the folders each panel may load local images from: the
+  extension's own `dist`/`media`, every open workspace folder, and the document's
+  own directory.
 - The webview (`src/webview/*`) injects content, builds the nav pane, and handles
   scroll sync under a strict Content-Security-Policy (nonce-allowed script, all
-  styles loaded as files).
+  styles loaded as files). `codeCopy.ts` attaches hover-reveal copy buttons to
+  every `<pre>` element after each content update. `zoomController.ts` maps
+  Ctrl+wheel events to CSS `zoom` and persists the level via `vscode.setState`.
