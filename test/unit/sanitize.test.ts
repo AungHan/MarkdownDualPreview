@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { renderMath } from '../../src/markdown/math';
 import { sanitizeDocumentHtml } from '../../src/markdown/sanitize';
 
 const identity = (src: string): string => src;
@@ -158,5 +159,60 @@ describe('sanitizeDocumentHtml — image rewriting', () => {
     const out = sanitizeDocumentHtml('<a href="https://example.com">x</a>', identity);
     expect(out).toContain('target="_blank"');
     expect(out).toContain('rel="noopener noreferrer"');
+  });
+});
+
+describe('sanitizeDocumentHtml — MathML from KaTeX', () => {
+  const mathml =
+    '<math><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi>' +
+    '<msup><mi>c</mi><mn>2</mn></msup></mrow>' +
+    '<annotation encoding="application/x-tex">E=mc^2</annotation></semantics></math>';
+
+  it('preserves a KaTeX-shaped MathML fragment intact', () => {
+    const out = sanitizeDocumentHtml(mathml, identity);
+    expect(out).toContain('<math>');
+    expect(out).toContain('<msup>');
+    expect(out).toContain('<annotation encoding="application/x-tex">E=mc^2</annotation>');
+  });
+
+  it('preserves MathML attributes on math elements', () => {
+    const out = sanitizeDocumentHtml('<math displaystyle="true"><mi mathvariant="bold">x</mi></math>', identity);
+    expect(out).toContain('displaystyle="true"');
+    expect(out).toContain('mathvariant="bold"');
+  });
+
+  it('does not accept MathML-only attributes on unrelated elements', () => {
+    const out = sanitizeDocumentHtml('<span mathvariant="bold">x</span>', identity);
+    expect(out).not.toContain('mathvariant');
+  });
+
+  it('never allows a style attribute on math elements', () => {
+    const out = sanitizeDocumentHtml('<math style="color:red"><mi>x</mi></math>', identity);
+    expect(out).not.toContain('style=');
+  });
+
+  it('preserves display="block" on real renderMath() display-mode output', () => {
+    const out = sanitizeDocumentHtml(renderMath('E=mc^2', true), identity);
+    expect(out).toContain('display="block"');
+  });
+
+  it('preserves notation on real renderMath() \\boxed output', () => {
+    const out = sanitizeDocumentHtml(renderMath('\\boxed{x}', true), identity);
+    expect(out).toContain('notation=');
+  });
+
+  it('preserves mathcolor on real renderMath() \\color output', () => {
+    const out = sanitizeDocumentHtml(renderMath('\\color{red}{x}', true), identity);
+    expect(out).toContain('mathcolor=');
+  });
+
+  it('preserves fence on real renderMath() \\left\\right output', () => {
+    const out = sanitizeDocumentHtml(renderMath('\\left(x\\right)', true), identity);
+    expect(out).toContain('fence=');
+  });
+
+  it('preserves stretchy on real renderMath() \\overbrace output', () => {
+    const out = sanitizeDocumentHtml(renderMath('\\overbrace{x}', true), identity);
+    expect(out).toContain('stretchy=');
   });
 });

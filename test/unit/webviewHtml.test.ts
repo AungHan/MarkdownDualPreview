@@ -23,6 +23,11 @@ describe('buildWebviewHtml', () => {
     expect(html).toContain(`default-src 'none'`);
   });
 
+  it('allows the nonce on style-src, for Mermaid-embedded <style> theming', () => {
+    const html = buildWebviewHtml(params);
+    expect(html).toContain(`style-src vscode-webview://abc 'nonce-NONCE123'`);
+  });
+
   it('permits webview-uri, https, and data images (local image rewriting depends on this)', () => {
     const html = buildWebviewHtml(params);
     expect(html).toContain(`img-src vscode-webview://abc https: data:`);

@@ -27,7 +27,10 @@ export function buildWebviewHtml(params: WebviewHtmlParams): string {
   const { cspSource, nonce, scriptUri, styleUri, hljsLightUri, hljsDarkUri } = params;
   const csp = [
     `default-src 'none'`,
-    `style-src ${cspSource}`,
+    // The nonce additionally permits Mermaid's per-diagram theme <style>
+    // blocks (patched with this same nonce in webview/mermaidRenderer.ts) —
+    // existing <link rel="stylesheet"> tags keep working via cspSource alone.
+    `style-src ${cspSource} 'nonce-${nonce}'`,
     `script-src 'nonce-${nonce}'`,
     `img-src ${cspSource} https: data:`,
     `font-src ${cspSource}`,

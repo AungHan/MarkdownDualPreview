@@ -1,5 +1,6 @@
 import type { FromWebviewMessage, ToWebviewMessage } from '../shared/messages';
 import { decorateCodeBlocks } from './codeCopy';
+import { decorateMermaidBlocks } from './mermaidRenderer';
 import { createScrollController } from './scrollController';
 import { createZoomController } from './zoomController';
 import { initTocResizer } from './tocResizer';
@@ -7,6 +8,10 @@ import { renderToc, type TocView } from './tocPane';
 
 const DEFAULT_TOC_WIDTH = 260;
 const TOC_COLLAPSE_THRESHOLD = 120;
+
+// Must be read synchronously at module top level — `document.currentScript`
+// is only valid during the script's initial (non-async) execution.
+const scriptNonce = (document.currentScript as HTMLScriptElement | null)?.nonce ?? '';
 
 interface PersistedState {
   collapsed?: boolean;
@@ -112,6 +117,7 @@ window.addEventListener('message', (event: MessageEvent<ToWebviewMessage>) => {
       tocView = renderToc(tocListEl, message.toc);
       scroll.rebuild();
       decorateCodeBlocks(contentEl, (text) => post({ type: 'copyText', text }));
+      void decorateMermaidBlocks(contentEl, scriptNonce);
       if (anchor !== null) {
         scroll.revealLine(anchor);
       }

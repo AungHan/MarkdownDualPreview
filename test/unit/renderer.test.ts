@@ -91,4 +91,89 @@ describe('createRenderer', () => {
     expect(toc[0].text).toBe('Bold and code');
     expect(toc[0].slug).toBe('bold-and-code');
   });
+
+  it('renders a ```math fence as MathML', () => {
+    const render = createRenderer();
+    const { html } = render('```math\nE=mc^2\n```\n');
+    expect(html).toContain('<math');
+    expect(html).not.toContain('<code class="hljs');
+  });
+
+  it('renders a $$...$$ block as MathML via the custom block rule', () => {
+    const render = createRenderer();
+    const { html } = render('$$\nE=mc^2\n$$\n');
+    expect(html).toContain('<math');
+  });
+
+  it('renders a single-line $$...$$ block as MathML', () => {
+    const render = createRenderer();
+    const { html } = render('$$ E=mc^2 $$\n');
+    expect(html).toContain('<math');
+  });
+
+  it('does not treat inline $5 / $10 currency text as math', () => {
+    const render = createRenderer();
+    const { html } = render('The price is $5, not $10.\n');
+    expect(html).toContain('$5');
+    expect(html).toContain('$10');
+    expect(html).not.toContain('<math');
+  });
+
+  it('renders a multi-line $$...$$ block, joining the lines as one formula source', () => {
+    const render = createRenderer();
+    const { html } = render('$$\na + b\n= c\n$$\n');
+    expect(html).toContain('<math');
+  });
+
+  it('leaves an unterminated $$ block as literal text rather than erroring', () => {
+    const render = createRenderer();
+    const { html } = render('$$\nno closing delimiter\n');
+    expect(html).not.toContain('<math');
+    expect(html).toContain('$$');
+  });
+
+  it('stamps data-line on a $$ math block for scroll sync', () => {
+    const render = createRenderer();
+    const { html } = render('intro\n\n$$\nE=mc^2\n$$\n');
+    expect(html).toMatch(/data-line="2"/);
+  });
+
+  it('renders a $$ block immediately following a paragraph line with no blank line between', () => {
+    const render = createRenderer();
+    const { html } = render('Some text\n$$\nE=mc^2\n$$\n');
+    expect(html).toContain('<math');
+    expect(html).not.toContain('$$');
+  });
+
+  it('renders a $$ block immediately following a list item with no blank line between', () => {
+    const render = createRenderer();
+    const { html } = render('- item text\n  $$\n  E=mc^2\n  $$\n');
+    expect(html).toContain('<math');
+  });
+
+  it('renders a $$ block immediately following a blockquote line with no blank line between', () => {
+    const render = createRenderer();
+    const { html } = render('> text\n$$\nE=mc^2\n$$\n');
+    expect(html).toContain('<math');
+  });
+
+  it('renders a ```mermaid fence as an unrendered placeholder with escaped source', () => {
+    const render = createRenderer();
+    const { html } = render('```mermaid\ngraph TD; A-->B;\n```\n');
+    expect(html).toContain('<pre class="mermaid"');
+    expect(html).toContain('graph TD; A--&gt;B;');
+    expect(html).not.toContain('<code class="hljs');
+  });
+
+  it('preserves data-line on a mermaid fence placeholder', () => {
+    const render = createRenderer();
+    const { html } = render('intro\n\n```mermaid\ngraph TD; A-->B;\n```\n');
+    expect(html).toMatch(/<pre class="mermaid" data-line="2"/);
+  });
+
+  it('does not run mermaid source through hljs even if it looks like a known language', () => {
+    const render = createRenderer();
+    const { html } = render('```mermaid\nclass Foo\n```\n');
+    expect(html).not.toContain('hljs-');
+  });
 });

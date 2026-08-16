@@ -27,6 +27,14 @@ Preview up to **three** Markdown files side by side, each with an embedded
 - **Ctrl + scroll zoom** — hold `Ctrl` and scroll inside a preview to zoom the
   content between 50% and 300% in 10% steps. Zoom level is saved per panel and
   restored when the panel is reopened.
+- **Math** — ` ```math ` fenced blocks and `$$...$$` blocks render as typeset
+  MathML via [KaTeX](https://katex.org/). Inline `$...$` math is not supported
+  (see Known limitations). A malformed formula shows an inline error instead of
+  breaking the rest of the document.
+- **Diagrams** — ` ```mermaid ` fenced blocks render as SVG diagrams (flowcharts,
+  sequence diagrams, class diagrams, and more) via [Mermaid](https://mermaid.js.org/).
+  A malformed diagram shows an inline error instead of breaking the rest of the
+  document.
 
 ## Usage
 
@@ -54,6 +62,16 @@ Preview up to **three** Markdown files side by side, each with an embedded
   between the nearest Markdown elements above and below it.
 - **`<picture>` renders via its `<img>` fallback only**; `<source srcset>` candidates are
   not rewritten to local files and are dropped.
+- **Inline `$...$` math is not supported** — only block ` ```math ` fences and `$$...$$`
+  render as math, so `$5`/`$10` in prose is never misread as a formula.
+- **Math blocks have no sub-formula scroll-sync anchor**, same granularity as a code block:
+  the whole ` ```math `/`$$...$$` block maps to one source line.
+- **Mermaid diagrams don't follow VS Code's active color theme** — they render with
+  Mermaid's default theme regardless of light/dark mode.
+- **Mermaid `click` interactivity is disabled** (diagram source is untrusted input,
+  same trust level as raw HTML) and diagrams have no pan/zoom/export controls.
+- **Diagrams have no sub-diagram scroll-sync anchor**, same granularity as a code
+  block: the whole ` ```mermaid ` fence maps to one source line.
 
 ## Development
 

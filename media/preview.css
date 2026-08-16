@@ -257,6 +257,37 @@ body.toc-resizing #toc-pane {
   margin: 1.5em 0;
 }
 
+/* ---- Math (KaTeX MathML) ------------------------------------------------ */
+
+.math-block {
+  margin: 1em 0;
+  overflow-x: auto;
+}
+
+.math-block math {
+  display: block;
+  text-align: center;
+}
+
+.math-error,
+.mermaid-error {
+  color: var(--vscode-errorForeground, #f14c4c);
+  font-family: var(--vscode-editor-font-family, ui-monospace, monospace);
+  font-size: 0.9em;
+}
+
+/* ---- Mermaid diagrams --------------------------------------------------- */
+
+.markdown-body pre.mermaid {
+  overflow-x: auto;
+  text-align: center;
+  background: none;
+}
+
+.markdown-body pre.mermaid svg {
+  max-width: 100%;
+}
+
 /* ---- Code copy button ------------------------------------------------- */
 
 .code-copy-btn {

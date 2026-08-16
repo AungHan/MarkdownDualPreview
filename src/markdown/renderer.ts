@@ -4,6 +4,8 @@ import hljs from 'highlight.js/lib/common';
 import MarkdownIt from 'markdown-it';
 import type { TocNode } from '../shared/messages';
 import { headingSlugPlugin } from './headingSlugPlugin';
+import { renderMath } from './math';
+import { mathBlockPlugin } from './mathBlockPlugin';
 import { type ResourceRewriter, sanitizeDocumentHtml } from './sanitize';
 import { sourceLinePlugin } from './sourceLinePlugin';
 import { extractToc } from './toc';
@@ -46,6 +48,14 @@ export function createRenderer(): Renderer {
   const md = new MarkdownIt({ html: true, linkify: true, typographer: false });
   md.use(sourceLinePlugin);
   md.use(headingSlugPlugin);
+  md.use(mathBlockPlugin);
+
+  md.renderer.rules.math_block = (tokens, idx) => {
+    const token = tokens[idx];
+    const dataLine = token.attrGet('data-line');
+    const lineAttr = dataLine !== null ? ` data-line="${dataLine}"` : '';
+    return `<div class="math-block"${lineAttr}>${renderMath(token.content, true)}</div>\n`;
+  };
 
   md.renderer.rules.fence = (tokens, idx) => {
     const token = tokens[idx];
@@ -55,6 +65,14 @@ export function createRenderer(): Renderer {
 
     const dataLine = token.attrGet('data-line');
     const lineAttr = dataLine !== null ? ` data-line="${dataLine}"` : '';
+
+    if (lang === 'math') {
+      return `<div class="math-block"${lineAttr}>${renderMath(code, true)}</div>\n`;
+    }
+
+    if (lang === 'mermaid') {
+      return `<pre class="mermaid"${lineAttr}>${md.utils.escapeHtml(code)}</pre>\n`;
+    }
 
     let body: string;
     let langClass = '';

@@ -2,7 +2,7 @@
   "name": "markdown-dual-preview",
   "displayName": "Markdown Dual Preview",
   "description": "Preview Markdown files side by side (up to three), each with an embedded section navigation pane.",
-  "version": "0.1.6",
+  "version": "0.2.0",
   "publisher": "aung-han",
   "license": "MIT",
   "repository": {
@@ -93,7 +93,9 @@
   "dependencies": {
     "github-slugger": "^2.0.0",
     "highlight.js": "^11.9.0",
+    "katex": "^0.18.4",
     "markdown-it": "^14.1.0",
+    "mermaid": "^11.16.1",
     "sanitize-html": "^2.17.6"
   },
   "devDependencies": {
@@ -106,6 +108,7 @@
     "@vscode/test-electron": "^2.3.9",
     "@vscode/vsce": "^3.2.0",
     "esbuild": "^0.20.2",
+    "jsdom": "^29.1.1",
     "mocha": "^10.4.0",
     "typescript": "^5.4.5",
     "vitest": "^1.6.0"

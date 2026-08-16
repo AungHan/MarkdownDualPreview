@@ -4,6 +4,18 @@ import sanitizeHtml from 'sanitize-html';
 export type ResourceRewriter = (src: string) => string;
 
 /**
+ * The MathML element set KaTeX's `output: 'mathml'` mode emits (see
+ * `markdown/math.ts`). Kept separate from {@link ALLOWED_TAGS} so the
+ * KaTeX-specific attribute scoping below can reference it by name.
+ */
+const MATHML_TAGS = [
+  'math', 'semantics', 'annotation', 'mrow', 'mi', 'mo', 'mn', 'mtext',
+  'mspace', 'mfrac', 'msqrt', 'mroot', 'msup', 'msub', 'msubsup', 'munder',
+  'mover', 'munderover', 'mtable', 'mtr', 'mtd', 'mpadded', 'mphantom',
+  'menclose', 'merror', 'mstyle', 'maction'
+];
+
+/**
  * Tags our own renderer or a README author may reasonably produce. Deliberately
  * excludes anything that can execute script, submit data, or re-target the
  * document (`script`, `style`, `iframe`, `form`, `base`, ...) — see the
@@ -26,7 +38,19 @@ const ALLOWED_TAGS = [
   's', 'samp', 'small', 'span', 'strong', 'sub', 'summary', 'sup',
   'table', 'tbody', 'td', 'tfoot', 'th', 'thead', 'tr',
   'u', 'ul',
-  'var'
+  'var',
+  ...MATHML_TAGS
+];
+
+/**
+ * MathML presentation attributes KaTeX's `output: 'mathml'` mode may emit,
+ * scoped to {@link MATHML_TAGS} only (never `'*'`) — none of these are `style`,
+ * and they carry no meaning outside a `<math>` subtree.
+ */
+const MATHML_ATTRIBUTES = [
+  'mathvariant', 'mathsize', 'mathcolor', 'display', 'displaystyle', 'scriptlevel',
+  'columnalign', 'rowspacing', 'columnspacing', 'encoding', 'separators',
+  'notation', 'stretchy', 'fence'
 ];
 
 /**
@@ -41,7 +65,8 @@ const ALLOWED_ATTRIBUTES: sanitizeHtml.IOptions['allowedAttributes'] = {
   th: ['colspan', 'rowspan', 'align', 'valign'],
   input: ['type', 'checked', 'disabled'],
   ol: ['start'],
-  details: ['open']
+  details: ['open'],
+  ...Object.fromEntries(MATHML_TAGS.map((tag) => [tag, MATHML_ATTRIBUTES]))
 };
 
 /**

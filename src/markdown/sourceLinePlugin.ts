@@ -17,7 +17,8 @@ const MAPPED_BLOCK_TYPES = new Set<string>([
   'code_block',
   'fence',
   'hr',
-  'html_block'
+  'html_block',
+  'math_block'
 ]);
 
 /**
