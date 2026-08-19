@@ -5,6 +5,7 @@ import { createScrollController } from './scrollController';
 import { createZoomController } from './zoomController';
 import { initTocResizer } from './tocResizer';
 import { renderToc, type TocView } from './tocPane';
+import { computeReadingStats, formatReadingStats } from './wordCount';
 
 const DEFAULT_TOC_WIDTH = 260;
 const TOC_COLLAPSE_THRESHOLD = 120;
@@ -42,12 +43,16 @@ const tocListEl = requireEl('toc-list');
 const tocPaneEl = requireEl('toc-pane');
 const toggleBtn = requireEl('toc-toggle');
 const resizerEl = requireEl('toc-resizer');
+const tocFilterEl = requireEl('toc-filter') as HTMLInputElement;
+const footerEl = requireEl('preview-footer');
 
 function post(message: FromWebviewMessage): void {
   vscodeApi.postMessage(message);
 }
 
 let tocView: TocView | null = null;
+// Session-transient TOC filter; re-applied after every live re-render, never persisted.
+let tocFilter = '';
 const scroll = createScrollController(
   contentEl,
   (line) => post({ type: 'scrollChanged', line }),
@@ -107,6 +112,22 @@ function syncToggleAria(): void {
   toggleBtn.setAttribute('aria-expanded', String(!tocPaneEl.classList.contains('collapsed')));
 }
 
+tocFilterEl.addEventListener('input', () => {
+  tocFilter = tocFilterEl.value;
+  tocView?.filter(tocFilter);
+});
+tocFilterEl.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') {
+    tocFilterEl.value = '';
+    tocFilter = '';
+    tocView?.filter('');
+  }
+});
+
+function updateReadingStats(): void {
+  footerEl.textContent = formatReadingStats(computeReadingStats(contentEl.textContent ?? ''));
+}
+
 window.addEventListener('message', (event: MessageEvent<ToWebviewMessage>) => {
   const message = event.data;
   switch (message.type) {
@@ -114,7 +135,11 @@ window.addEventListener('message', (event: MessageEvent<ToWebviewMessage>) => {
       // Preserve reading position across live-update re-renders.
       const anchor = scroll.currentTopLine();
       contentEl.innerHTML = message.html;
+      // Count author content before decorators inject chrome (Copy buttons,
+      // Mermaid SVG) into #content and inflate the reading stats.
+      updateReadingStats();
       tocView = renderToc(tocListEl, message.toc);
+      tocView.filter(tocFilter);
       scroll.rebuild();
       decorateCodeBlocks(contentEl, (text) => post({ type: 'copyText', text }));
       void decorateMermaidBlocks(contentEl, scriptNonce);

@@ -3,6 +3,19 @@ import type { TocNode } from '../shared/messages';
 export interface TocView {
   /** Highlight the nav entry for `slug`, clearing any previous highlight. */
   setActive(slug: string | null): void;
+  /**
+   * Hide entries that neither match `query` nor have a matching descendant.
+   * Empty/whitespace `query` restores the full tree.
+   */
+  filter(query: string): void;
+}
+
+/** A nav entry paired with the data needed to filter it. */
+interface FilterEntry {
+  readonly li: HTMLElement;
+  /** Lowercased heading text for case-insensitive substring matching. */
+  readonly text: string;
+  readonly children: readonly FilterEntry[];
 }
 
 /**
@@ -16,7 +29,8 @@ export function renderToc(listEl: HTMLElement, toc: readonly TocNode[]): TocView
   listEl.textContent = '';
   const slugToLink = new Map<string, HTMLElement>();
 
-  const build = (nodes: readonly TocNode[], parent: HTMLElement): void => {
+  const build = (nodes: readonly TocNode[], parent: HTMLElement): FilterEntry[] => {
+    const entries: FilterEntry[] = [];
     for (const node of nodes) {
       const li = document.createElement('li');
 
@@ -32,15 +46,31 @@ export function renderToc(listEl: HTMLElement, toc: readonly TocNode[]): TocView
       li.appendChild(link);
       slugToLink.set(node.slug, link);
 
+      let children: FilterEntry[] = [];
       if (node.children.length > 0) {
         const childList = document.createElement('ul');
-        build(node.children, childList);
+        children = build(node.children, childList);
         li.appendChild(childList);
       }
       parent.appendChild(li);
+      entries.push({ li, text: node.text.toLowerCase(), children });
     }
+    return entries;
   };
-  build(toc, listEl);
+  const roots = build(toc, listEl);
+
+  // Show an entry when it matches or any descendant does, so a match keeps its
+  // ancestor context. A matching parent does NOT force its children visible.
+  const applyFilter = (entries: readonly FilterEntry[], query: string): boolean => {
+    let anyVisible = false;
+    for (const entry of entries) {
+      const childVisible = applyFilter(entry.children, query);
+      const visible = query === '' || entry.text.includes(query) || childVisible;
+      entry.li.classList.toggle('toc-hidden', !visible);
+      anyVisible = anyVisible || visible;
+    }
+    return anyVisible;
+  };
 
   let activeEl: HTMLElement | null = null;
   return {
@@ -50,6 +80,9 @@ export function renderToc(listEl: HTMLElement, toc: readonly TocNode[]): TocView
       }
       activeEl = slug ? slugToLink.get(slug) ?? null : null;
       activeEl?.classList.add('active');
+    },
+    filter(query: string): void {
+      applyFilter(roots, query.trim().toLowerCase());
     }
   };
 }
