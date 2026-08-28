@@ -86,7 +86,30 @@ body.toc-resizing #toc-pane {
 }
 
 #toc-pane.collapsed #toc-title,
+#toc-pane.collapsed #toc-filter,
 #toc-pane.collapsed #toc-list {
+  display: none;
+}
+
+#toc-filter {
+  display: block;
+  box-sizing: border-box;
+  width: calc(100% - 20px);
+  margin: 6px 10px 0;
+  padding: 3px 6px;
+  font-size: 0.85em;
+  color: var(--vscode-input-foreground);
+  background-color: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, var(--vscode-panel-border, rgba(128, 128, 128, 0.35)));
+  border-radius: 4px;
+}
+
+#toc-filter:focus {
+  outline: 1px solid var(--vscode-focusBorder, #007acc);
+  outline-offset: -1px;
+}
+
+.toc-hidden {
   display: none;
 }
 
@@ -317,4 +340,89 @@ body.toc-resizing #toc-pane {
 
 .code-copy-btn.copied {
   color: var(--vscode-testing-iconPassed, #73c991);
+}
+
+/* ---- GitHub-style alerts ---------------------------------------------- */
+
+.markdown-body .markdown-alert {
+  margin: 0 0 1em;
+  padding: 8px 16px;
+  border-left: 0.25em solid var(--alert-color, var(--vscode-panel-border, rgba(128, 128, 128, 0.4)));
+}
+
+.markdown-body .markdown-alert > :first-child {
+  margin-top: 0;
+}
+
+.markdown-body .markdown-alert > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown-alert-title {
+  font-weight: 600;
+  margin: 0 0 4px;
+  color: var(--alert-color);
+}
+
+.markdown-alert-note { --alert-color: var(--vscode-editorInfo-foreground, #539bf5); }
+.markdown-alert-tip { --alert-color: var(--vscode-testing-iconPassed, #57ab5a); }
+.markdown-alert-important { --alert-color: var(--vscode-charts-purple, #986ee2); }
+.markdown-alert-warning { --alert-color: var(--vscode-editorWarning-foreground, #c69026); }
+.markdown-alert-caution { --alert-color: var(--vscode-editorError-foreground, #e5534b); }
+
+/* ---- Front matter metadata -------------------------------------------- */
+
+.markdown-body .front-matter {
+  margin: 0 0 1.2em;
+  padding: 6px 12px;
+  border: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.3));
+  border-radius: 6px;
+}
+
+.markdown-body .front-matter > summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85em;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.8;
+}
+
+.markdown-body .front-matter-table {
+  margin: 8px 0 0;
+}
+
+.markdown-body .front-matter-table th,
+.markdown-body .front-matter-table td {
+  padding: 2px 0;
+  border: none;
+  text-align: left;
+  vertical-align: top;
+}
+
+.markdown-body .front-matter-table th {
+  padding-right: 16px;
+  white-space: nowrap;
+  opacity: 0.8;
+}
+
+/* ---- Reading-stats footer --------------------------------------------- */
+
+#preview-footer {
+  position: fixed;
+  right: 14px;
+  bottom: 8px;
+  padding: 2px 10px;
+  font-size: 0.78em;
+  color: var(--vscode-descriptionForeground, inherit);
+  background-color: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.3));
+  border-radius: 10px;
+  opacity: 0.85;
+  pointer-events: none;
+  user-select: none;
+}
+
+#preview-footer:empty {
+  display: none;
 }

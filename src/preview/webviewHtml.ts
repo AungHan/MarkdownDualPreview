@@ -57,11 +57,13 @@ export function buildWebviewHtml(params: WebviewHtmlParams): string {
         <button id="toc-toggle" type="button" title="Toggle navigation" aria-expanded="true">&#9776;</button>
         <span id="toc-title">Contents</span>
       </div>
+      <input id="toc-filter" type="search" placeholder="Filter sections&hellip;" aria-label="Filter sections">
       <ul id="toc-list"></ul>
     </nav>
     <div id="toc-resizer" role="separator" aria-orientation="vertical" title="Drag to resize"></div>
     <main id="content" class="markdown-body" tabindex="0"></main>
   </div>
+  <footer id="preview-footer" aria-live="off"></footer>
   <script nonce="${nonce}" src="${scriptUri}"></script>
 </body>
 </html>`;

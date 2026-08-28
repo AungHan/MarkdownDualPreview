@@ -3,6 +3,8 @@
 import hljs from 'highlight.js/lib/common';
 import MarkdownIt from 'markdown-it';
 import type { TocNode } from '../shared/messages';
+import { alertPlugin } from './alertPlugin';
+import { frontMatterPlugin, renderFrontMatter } from './frontMatterPlugin';
 import { headingSlugPlugin } from './headingSlugPlugin';
 import { renderMath } from './math';
 import { mathBlockPlugin } from './mathBlockPlugin';
@@ -49,6 +51,8 @@ export function createRenderer(): Renderer {
   md.use(sourceLinePlugin);
   md.use(headingSlugPlugin);
   md.use(mathBlockPlugin);
+  md.use(frontMatterPlugin);
+  md.use(alertPlugin);
 
   md.renderer.rules.math_block = (tokens, idx) => {
     const token = tokens[idx];
@@ -56,6 +60,9 @@ export function createRenderer(): Renderer {
     const lineAttr = dataLine !== null ? ` data-line="${dataLine}"` : '';
     return `<div class="math-block"${lineAttr}>${renderMath(token.content, true)}</div>\n`;
   };
+
+  md.renderer.rules.front_matter = (tokens, idx) =>
+    renderFrontMatter(tokens[idx].meta.rows, tokens[idx].attrGet('data-line'), md.utils.escapeHtml);
 
   md.renderer.rules.fence = (tokens, idx) => {
     const token = tokens[idx];

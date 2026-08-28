@@ -2,7 +2,7 @@
   "name": "markdown-dual-preview",
   "displayName": "Markdown Dual Preview",
   "description": "Preview Markdown files side by side (up to three), each with an embedded section navigation pane.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "aung-han",
   "license": "MIT",
   "repository": {

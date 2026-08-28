@@ -124,6 +124,7 @@ export class PreviewManager implements vscode.Disposable {
       vscode.ViewColumn.Beside,
       {
         enableScripts: true,
+        enableFindWidget: true,
         retainContextWhenHidden: true,
         localResourceRoots: localResourceRoots(this.extensionUri, document.uri)
       }
