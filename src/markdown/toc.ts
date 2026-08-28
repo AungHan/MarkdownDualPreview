@@ -21,7 +21,7 @@ export function inlineText(inline: Token | undefined): string {
   }
   let text = '';
   for (const child of inline.children) {
-    if (child.type === 'text' || child.type === 'code_inline') {
+    if (child.type === 'text' || child.type === 'code_inline' || child.type === 'emoji') {
       text += child.content;
     } else if (child.type === 'softbreak' || child.type === 'hardbreak') {
       text += ' ';

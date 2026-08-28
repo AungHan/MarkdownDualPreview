@@ -2,7 +2,7 @@
   "name": "markdown-dual-preview",
   "displayName": "Markdown Dual Preview",
   "description": "Preview Markdown files side by side (up to three), each with an embedded section navigation pane.",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "publisher": "aung-han",
   "license": "MIT",
   "repository": {
@@ -35,6 +35,11 @@
         "title": "Open Dual Preview",
         "category": "Markdown Dual Preview",
         "icon": "$(open-preview)"
+      },
+      {
+        "command": "markdownDualPreview.exportHtml",
+        "title": "Export to HTML",
+        "category": "Markdown Dual Preview"
       }
     ],
     "menus": {
@@ -48,6 +53,10 @@
       "commandPalette": [
         {
           "command": "markdownDualPreview.open",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "markdownDualPreview.exportHtml",
           "when": "editorLangId == markdown"
         }
       ],
@@ -95,11 +104,14 @@
     "highlight.js": "^11.9.0",
     "katex": "^0.18.4",
     "markdown-it": "^14.1.0",
+    "markdown-it-emoji": "^3.1.0",
+    "markdown-it-task-lists": "^2.1.1",
     "mermaid": "^11.16.1",
     "sanitize-html": "^2.17.6"
   },
   "devDependencies": {
     "@types/markdown-it": "^14.1.2",
+    "@types/markdown-it-emoji": "^3.0.1",
     "@types/mocha": "^10.0.6",
     "@types/node": "^20.11.0",
     "@types/sanitize-html": "^2.16.1",

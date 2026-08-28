@@ -32,7 +32,8 @@ export type FromWebviewMessage =
   | { readonly type: 'ready' }
   | { readonly type: 'scrollChanged'; readonly line: number }
   | { readonly type: 'tocToggled'; readonly collapsed: boolean }
-  | { readonly type: 'copyText'; readonly text: string };
+  | { readonly type: 'copyText'; readonly text: string }
+  | { readonly type: 'checkboxToggled'; readonly line: number; readonly checked: boolean };
 
 /** Runtime type guard for messages arriving from the (untrusted) webview. */
 export function isFromWebviewMessage(value: unknown): value is FromWebviewMessage {
@@ -49,6 +50,15 @@ export function isFromWebviewMessage(value: unknown): value is FromWebviewMessag
       return typeof (value as { collapsed?: unknown }).collapsed === 'boolean';
     case 'copyText':
       return typeof (value as { text?: unknown }).text === 'string';
+    case 'checkboxToggled': {
+      const line = (value as { line?: unknown }).line;
+      return (
+        typeof line === 'number' &&
+        Number.isInteger(line) &&
+        line >= 0 &&
+        typeof (value as { checked?: unknown }).checked === 'boolean'
+      );
+    }
     default:
       return false;
   }

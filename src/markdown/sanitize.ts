@@ -69,6 +69,18 @@ const ALLOWED_ATTRIBUTES: sanitizeHtml.IOptions['allowedAttributes'] = {
   ...Object.fromEntries(MATHML_TAGS.map((tag) => [tag, MATHML_ATTRIBUTES]))
 };
 
+export interface SanitizeOptions {
+  /**
+   * Extra `<img src>` schemes to allow beyond `http`/`https`/`data`. Only the
+   * HTML-export path (`export/exportHtml.ts`) passes `['file']` here — its
+   * rewriter resolves local images to `file://` URIs for a standalone document
+   * opened outside VS Code. The live webview never sets this: its CSP has no
+   * `file:` in `img-src`, so an allowed `file:` src would just fail to load
+   * there, and widening the default for every caller would blur that boundary.
+   */
+  readonly extraImageSchemes?: readonly string[];
+}
+
 /**
  * Allowlist-sanitize rendered document HTML and rewrite every `<img src>`
  * through `rewriteSrc`. Preserves the attributes emitted by our own renderer
@@ -79,12 +91,18 @@ const ALLOWED_ATTRIBUTES: sanitizeHtml.IOptions['allowedAttributes'] = {
  * browser and fail to load, so the plain `<img>` fallback is dropped instead
  * of half-supporting `srcset`.
  */
-export function sanitizeDocumentHtml(html: string, rewriteSrc: ResourceRewriter): string {
+export function sanitizeDocumentHtml(
+  html: string,
+  rewriteSrc: ResourceRewriter,
+  options?: SanitizeOptions
+): string {
   return sanitizeHtml(html, {
     allowedTags: ALLOWED_TAGS,
     allowedAttributes: ALLOWED_ATTRIBUTES,
     allowedSchemes: ['http', 'https', 'mailto'],
-    allowedSchemesByTag: { img: ['http', 'https', 'data'] },
+    allowedSchemesByTag: {
+      img: ['http', 'https', 'data', ...(options?.extraImageSchemes ?? [])]
+    },
     allowProtocolRelative: false,
     nonTextTags: ['script', 'style', 'textarea', 'option', 'noscript', 'template'],
     transformTags: {

@@ -1,4 +1,6 @@
 import type { FromWebviewMessage, ToWebviewMessage } from '../shared/messages';
+import { createBreadcrumb } from './breadcrumb';
+import { decorateCheckboxes } from './checkboxDecorator';
 import { decorateCodeBlocks } from './codeCopy';
 import { decorateMermaidBlocks } from './mermaidRenderer';
 import { createScrollController } from './scrollController';
@@ -45,6 +47,7 @@ const toggleBtn = requireEl('toc-toggle');
 const resizerEl = requireEl('toc-resizer');
 const tocFilterEl = requireEl('toc-filter') as HTMLInputElement;
 const footerEl = requireEl('preview-footer');
+const breadcrumbEl = requireEl('breadcrumb');
 
 function post(message: FromWebviewMessage): void {
   vscodeApi.postMessage(message);
@@ -53,10 +56,14 @@ function post(message: FromWebviewMessage): void {
 let tocView: TocView | null = null;
 // Session-transient TOC filter; re-applied after every live re-render, never persisted.
 let tocFilter = '';
+const breadcrumb = createBreadcrumb(breadcrumbEl);
 const scroll = createScrollController(
   contentEl,
   (line) => post({ type: 'scrollChanged', line }),
-  (slug) => tocView?.setActive(slug)
+  (slug) => {
+    tocView?.setActive(slug);
+    breadcrumb.update(slug);
+  }
 );
 const zoom = createZoomController(contentEl, () => persistState());
 
@@ -140,8 +147,10 @@ window.addEventListener('message', (event: MessageEvent<ToWebviewMessage>) => {
       updateReadingStats();
       tocView = renderToc(tocListEl, message.toc);
       tocView.filter(tocFilter);
+      breadcrumb.setTree(message.toc);
       scroll.rebuild();
       decorateCodeBlocks(contentEl, (text) => post({ type: 'copyText', text }));
+      decorateCheckboxes(contentEl, (line, checked) => post({ type: 'checkboxToggled', line, checked }));
       void decorateMermaidBlocks(contentEl, scriptNonce);
       if (anchor !== null) {
         scroll.revealLine(anchor);

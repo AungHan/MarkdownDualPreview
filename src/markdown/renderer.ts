@@ -2,6 +2,8 @@
 // cutting the bundle by ~1 MB. Unmatched languages fall back to escaped text.
 import hljs from 'highlight.js/lib/common';
 import MarkdownIt from 'markdown-it';
+import * as emoji from 'markdown-it-emoji';
+import taskLists from 'markdown-it-task-lists';
 import type { TocNode } from '../shared/messages';
 import { alertPlugin } from './alertPlugin';
 import { frontMatterPlugin, renderFrontMatter } from './frontMatterPlugin';
@@ -20,6 +22,8 @@ export interface RenderResult {
 export interface RenderOptions {
   /** Rewrites local `<img src>` references to webview-loadable URIs. Defaults to identity. */
   readonly rewriteResourceSrc?: ResourceRewriter;
+  /** Extra `<img src>` schemes to allow past the sanitizer; see {@link SanitizeOptions}. */
+  readonly allowedImageSchemes?: readonly string[];
 }
 
 /** A configured render function: Markdown text in, HTML + TOC tree out. */
@@ -53,6 +57,8 @@ export function createRenderer(): Renderer {
   md.use(mathBlockPlugin);
   md.use(frontMatterPlugin);
   md.use(alertPlugin);
+  md.use(emoji.full);
+  md.use(taskLists, { enabled: true, label: false });
 
   md.renderer.rules.math_block = (tokens, idx) => {
     const token = tokens[idx];
@@ -102,7 +108,9 @@ export function createRenderer(): Renderer {
     const tokens = md.parse(markdown, {});
     const toc = extractToc(tokens);
     const rawHtml = md.renderer.render(tokens, md.options, {});
-    const html = sanitizeDocumentHtml(rawHtml, options?.rewriteResourceSrc ?? identityRewriter);
+    const html = sanitizeDocumentHtml(rawHtml, options?.rewriteResourceSrc ?? identityRewriter, {
+      extraImageSchemes: options?.allowedImageSchemes
+    });
     return { html, toc };
   };
 }

@@ -67,6 +67,19 @@ export class Range {
   ) {}
 }
 
+export interface WorkspaceEditOperation {
+  readonly uri: Uri;
+  readonly range: Range;
+  readonly newText: string;
+}
+
+export class WorkspaceEdit {
+  readonly operations: WorkspaceEditOperation[] = [];
+  replace(uri: Uri, range: Range, newText: string): void {
+    this.operations.push({ uri, range, newText });
+  }
+}
+
 export class Uri {
   private constructor(readonly scheme: string, readonly path: string) {}
   static file(p: string): Uri {
@@ -191,6 +204,10 @@ export const window = {
     window.errorMessages.push(message);
     return Promise.resolve(undefined);
   },
+  saveDialogResult: undefined as Uri | undefined,
+  showSaveDialog(_options: unknown): Thenable<Uri | undefined> {
+    return Promise.resolve(window.saveDialogResult);
+  },
   onDidChangeTextEditorVisibleRanges(listener: (e: unknown) => void): Disposable {
     return window.onDidChangeTextEditorVisibleRangesEmitter.event(listener);
   },
@@ -203,10 +220,30 @@ export const workspace = {
   textDocuments: [] as unknown[],
   workspaceFolders: undefined as { readonly uri: Uri }[] | undefined,
   configValues: new Map<string, unknown>(),
+  appliedEdits: [] as WorkspaceEdit[],
   onDidChangeTextDocumentEmitter: new EventEmitter<unknown>(),
   onDidCloseTextDocumentEmitter: new EventEmitter<unknown>(),
   onDidRenameFilesEmitter: new EventEmitter<unknown>(),
   onDidChangeConfigurationEmitter: new EventEmitter<unknown>(),
+  applyEdit(edit: WorkspaceEdit): Thenable<boolean> {
+    workspace.appliedEdits.push(edit);
+    return Promise.resolve(true);
+  },
+  fsFiles: new Map<string, Uint8Array>(),
+  writtenFiles: [] as { uri: Uri; content: Uint8Array }[],
+  fs: {
+    readFile(uri: Uri): Thenable<Uint8Array> {
+      const content = workspace.fsFiles.get(uri.toString());
+      if (!content) {
+        return Promise.reject(new Error(`mock fs: no fixture registered for ${uri.toString()}`));
+      }
+      return Promise.resolve(content);
+    },
+    writeFile(uri: Uri, content: Uint8Array): Thenable<void> {
+      workspace.writtenFiles.push({ uri, content });
+      return Promise.resolve();
+    }
+  },
   getConfiguration(section?: string) {
     const prefix = section ? `${section}.` : '';
     return {
@@ -260,6 +297,10 @@ export const __test = {
     workspace.textDocuments.length = 0;
     workspace.workspaceFolders = undefined;
     workspace.configValues.clear();
+    workspace.appliedEdits.length = 0;
+    workspace.fsFiles.clear();
+    workspace.writtenFiles.length = 0;
+    window.saveDialogResult = undefined;
     env.clipboard.written.length = 0;
     commands.registered.clear();
   }

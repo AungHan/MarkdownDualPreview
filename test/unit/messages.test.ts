@@ -34,6 +34,40 @@ describe('isFromWebviewMessage', () => {
     expect(isFromWebviewMessage({ type: 'copyText' })).toBe(false);
   });
 
+  it('accepts a valid checkboxToggled message', () => {
+    expect(isFromWebviewMessage({ type: 'checkboxToggled', line: 3, checked: true })).toBe(true);
+    expect(isFromWebviewMessage({ type: 'checkboxToggled', line: 0, checked: false })).toBe(true);
+  });
+
+  it('rejects checkboxToggled without a numeric line', () => {
+    expect(isFromWebviewMessage({ type: 'checkboxToggled', line: '3', checked: true })).toBe(
+      false
+    );
+    expect(isFromWebviewMessage({ type: 'checkboxToggled', checked: true })).toBe(false);
+  });
+
+  it('rejects checkboxToggled with a negative, fractional, or non-finite line', () => {
+    expect(isFromWebviewMessage({ type: 'checkboxToggled', line: -1, checked: true })).toBe(
+      false
+    );
+    expect(isFromWebviewMessage({ type: 'checkboxToggled', line: 1.5, checked: true })).toBe(
+      false
+    );
+    expect(isFromWebviewMessage({ type: 'checkboxToggled', line: NaN, checked: true })).toBe(
+      false
+    );
+    expect(isFromWebviewMessage({ type: 'checkboxToggled', line: Infinity, checked: true })).toBe(
+      false
+    );
+  });
+
+  it('rejects checkboxToggled without a boolean checked', () => {
+    expect(isFromWebviewMessage({ type: 'checkboxToggled', line: 3, checked: 'true' })).toBe(
+      false
+    );
+    expect(isFromWebviewMessage({ type: 'checkboxToggled', line: 3 })).toBe(false);
+  });
+
   it('rejects unknown message types', () => {
     expect(isFromWebviewMessage({ type: 'unknown' })).toBe(false);
   });

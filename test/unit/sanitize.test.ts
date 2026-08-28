@@ -160,6 +160,21 @@ describe('sanitizeDocumentHtml — image rewriting', () => {
     expect(out).toContain('target="_blank"');
     expect(out).toContain('rel="noopener noreferrer"');
   });
+
+  it('strips a file: src by default, even after rewriteSrc produces one', () => {
+    const toFileUri = (src: string): string => `file:///C:/project/${src}`;
+    const out = sanitizeDocumentHtml('<img src="./a.png">', toFileUri);
+    expect(out).not.toContain('file:');
+    expect(out).not.toContain('src=');
+  });
+
+  it('keeps a file: src when extraImageSchemes explicitly allows it (export path)', () => {
+    const toFileUri = (src: string): string => `file:///C:/project/${src}`;
+    const out = sanitizeDocumentHtml('<img src="./a.png">', toFileUri, {
+      extraImageSchemes: ['file']
+    });
+    expect(out).toContain('src="file:///C:/project/./a.png"');
+  });
 });
 
 describe('sanitizeDocumentHtml — MathML from KaTeX', () => {

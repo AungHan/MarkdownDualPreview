@@ -2,6 +2,29 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { PreviewManager } from '../../src/preview/previewManager';
 import { __test, Uri, workspace, type FakeWebviewPanel } from '../mocks/vscode';
 
+interface FakeCheckboxDoc {
+  uri: ReturnType<typeof Uri.file>;
+  languageId: string;
+  lineCount: number;
+  getText(): string;
+  lineAt(line: number): { text: string };
+}
+
+function checkboxDoc(path: string, text: string): FakeCheckboxDoc {
+  const lines = text.split('\n');
+  return {
+    uri: Uri.file(path),
+    languageId: 'markdown',
+    lineCount: lines.length,
+    getText: () => text,
+    lineAt: (line: number) => ({ text: lines[line] })
+  };
+}
+
+function openCheckboxDoc(manager: PreviewManager, d: FakeCheckboxDoc): void {
+  manager.openPreview(d as unknown as Parameters<PreviewManager['openPreview']>[0]);
+}
+
 const EXT_URI = Uri.file('C:/ext');
 
 const RESOURCE_BASE = 'https:///file+.vscode-resource.vscode-cdn.net';
@@ -107,5 +130,71 @@ describe('previewPanel image rewriting', () => {
     open(manager, doc('C:/standalone/notes.md', '![](/assets/x.png)\n'));
     const update = readyAndGetUpdate(__test.createdPanels[0]);
     expect(update.html).toContain('src="/assets/x.png"');
+  });
+});
+
+describe('previewPanel checkbox toggling', () => {
+  it('toggles [ ] to [x] when checkboxToggled reports checked: true', async () => {
+    const manager = new PreviewManager(EXT_URI);
+    openCheckboxDoc(manager, checkboxDoc('C:/todo.md', '- [ ] first item\n'));
+    const panel = __test.createdPanels[0];
+    panel.webview.__fireMessage({ type: 'ready' });
+
+    panel.webview.__fireMessage({ type: 'checkboxToggled', line: 0, checked: true });
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(workspace.appliedEdits).toHaveLength(1);
+    expect(workspace.appliedEdits[0].operations).toEqual([
+      { uri: Uri.file('C:/todo.md'), range: { startLine: 0, startChar: 2, endLine: 0, endChar: 5 }, newText: '[x]' }
+    ]);
+  });
+
+  it('toggles [x] to [ ] when checkboxToggled reports checked: false', async () => {
+    const manager = new PreviewManager(EXT_URI);
+    openCheckboxDoc(manager, checkboxDoc('C:/todo.md', '- [x] done item\n'));
+    const panel = __test.createdPanels[0];
+    panel.webview.__fireMessage({ type: 'ready' });
+
+    panel.webview.__fireMessage({ type: 'checkboxToggled', line: 0, checked: false });
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(workspace.appliedEdits).toHaveLength(1);
+    expect(workspace.appliedEdits[0].operations[0].newText).toBe('[ ]');
+  });
+
+  it('finds a checkbox a few lines past the reported line (multi-line list item)', async () => {
+    const manager = new PreviewManager(EXT_URI);
+    openCheckboxDoc(
+      manager,
+      checkboxDoc('C:/todo.md', '- item wraps\n  onto a second line\n  [ ] not actually a checkbox marker line 3\n')
+    );
+    const panel = __test.createdPanels[0];
+    panel.webview.__fireMessage({ type: 'ready' });
+
+    panel.webview.__fireMessage({ type: 'checkboxToggled', line: 0, checked: true });
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(workspace.appliedEdits).toHaveLength(1);
+    expect(workspace.appliedEdits[0].operations[0]).toEqual({
+      uri: Uri.file('C:/todo.md'),
+      range: { startLine: 2, startChar: 2, endLine: 2, endChar: 5 },
+      newText: '[x]'
+    });
+  });
+
+  it('applies no edit when the reported line has no checkbox pattern', async () => {
+    const manager = new PreviewManager(EXT_URI);
+    openCheckboxDoc(manager, checkboxDoc('C:/todo.md', 'just plain text\nmore text\n'));
+    const panel = __test.createdPanels[0];
+    panel.webview.__fireMessage({ type: 'ready' });
+
+    panel.webview.__fireMessage({ type: 'checkboxToggled', line: 0, checked: true });
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(workspace.appliedEdits).toHaveLength(0);
   });
 });

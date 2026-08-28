@@ -48,6 +48,14 @@ function buildResourceRewriter(
   };
 }
 
+/**
+ * Number of lines to forward-search from a reported `data-line` for a
+ * checkbox marker. The `data-line` attribute points to the start of the list
+ * item, which is normally the checkbox line itself; the small forward window
+ * absorbs any multi-line list item edge cases.
+ */
+const CHECKBOX_SEARCH_WINDOW = 5;
+
 /** Map a VS Code color theme to the webview's theme family. */
 function toThemeKind(kind: vscode.ColorThemeKind): ThemeKind {
   switch (kind) {
@@ -204,6 +212,35 @@ export class PreviewPanel {
       case 'copyText':
         vscode.env.clipboard.writeText(raw.text).then(undefined, () => undefined);
         break;
+      case 'checkboxToggled':
+        void this.toggleCheckbox(raw.line, raw.checked);
+        break;
+    }
+  }
+
+  /**
+   * Toggle a `- [ ]` / `- [x]` marker in the source document. `checked` is the
+   * webview's *new* state, so we search for the *opposite* marker and replace
+   * it. The exact regex match is required before any edit is applied — a
+   * stale or crafted line number that carries no checkbox marker is a no-op,
+   * never a blind write to the reported line.
+   */
+  private async toggleCheckbox(line: number, checked: boolean): Promise<void> {
+    const pattern = checked ? /\[ \]/ : /\[[xX]\]/;
+    const replacement = checked ? '[x]' : '[ ]';
+    const maxLine = Math.min(line + CHECKBOX_SEARCH_WINDOW, this.document.lineCount);
+    for (let i = line; i < maxLine; i++) {
+      const match = pattern.exec(this.document.lineAt(i).text);
+      if (match) {
+        const edit = new vscode.WorkspaceEdit();
+        edit.replace(
+          this.document.uri,
+          new vscode.Range(i, match.index, i, match.index + 3),
+          replacement
+        );
+        await vscode.workspace.applyEdit(edit);
+        return;
+      }
     }
   }
 

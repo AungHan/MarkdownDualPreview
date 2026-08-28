@@ -176,4 +176,50 @@ describe('createRenderer', () => {
     const { html } = render('```mermaid\nclass Foo\n```\n');
     expect(html).not.toContain('hljs-');
   });
+
+  it('renders a :smile: shortcode as a Unicode emoji character', () => {
+    const render = createRenderer();
+    const { html } = render('Hello :smile:\n');
+    expect(html).not.toContain(':smile:');
+    expect(html).toContain('😄');
+  });
+
+  it('leaves an unknown emoji shortcode as literal text', () => {
+    const render = createRenderer();
+    const { html } = render('This is :notreal: text.\n');
+    expect(html).toContain(':notreal:');
+  });
+
+  it('renders emoji inside a heading in both HTML and TOC text', () => {
+    const render = createRenderer();
+    const { html, toc } = render('# Hello :wave:\n');
+    expect(html).toContain('👋');
+    expect(toc[0].text).toContain('👋');
+  });
+
+  it('renders an unchecked task list item as a checkbox input', () => {
+    const render = createRenderer();
+    const { html } = render('- [ ] unchecked item\n');
+    expect(html).toMatch(/<input[^>]*type="checkbox"/);
+    expect(html).not.toMatch(/<input[^>]*checked/);
+  });
+
+  it('renders a checked task list item as a checked checkbox input', () => {
+    const render = createRenderer();
+    const { html } = render('- [x] checked item\n');
+    expect(html).toMatch(/<input[^>]*checked[^>]*type="checkbox"/);
+  });
+
+  it('carries data-line on task list items for scroll sync', () => {
+    const render = createRenderer();
+    const { html } = render('- [ ] first item\n');
+    expect(html).toMatch(/<li[^>]*data-line="0"/);
+  });
+
+  it('renders nested task lists correctly', () => {
+    const render = createRenderer();
+    const { html } = render('- [ ] parent\n  - [x] child\n');
+    const checkboxCount = (html.match(/type="checkbox"/g) ?? []).length;
+    expect(checkboxCount).toBe(2);
+  });
 });

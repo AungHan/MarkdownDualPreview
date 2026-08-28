@@ -61,7 +61,10 @@ export function buildWebviewHtml(params: WebviewHtmlParams): string {
       <ul id="toc-list"></ul>
     </nav>
     <div id="toc-resizer" role="separator" aria-orientation="vertical" title="Drag to resize"></div>
-    <main id="content" class="markdown-body" tabindex="0"></main>
+    <div id="content-column">
+      <div id="breadcrumb" aria-label="Current section"></div>
+      <main id="content" class="markdown-body" tabindex="0"></main>
+    </div>
   </div>
   <footer id="preview-footer" aria-live="off"></footer>
   <script nonce="${nonce}" src="${scriptUri}"></script>

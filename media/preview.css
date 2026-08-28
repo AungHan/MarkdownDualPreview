@@ -175,6 +175,42 @@ body.toc-resizing #toc-pane {
 
 /* ---- Content ---------------------------------------------------------- */
 
+#content-column {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#breadcrumb {
+  flex: 0 0 auto;
+  padding: 6px 40px;
+  font-size: 0.85em;
+  opacity: 0.75;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-bottom: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.25));
+}
+
+#breadcrumb:empty {
+  display: none;
+}
+
+.breadcrumb-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.breadcrumb-link:hover {
+  text-decoration: underline;
+}
+
+.breadcrumb-separator {
+  opacity: 0.6;
+}
+
 #content {
   flex: 1 1 auto;
   overflow-y: auto;
@@ -309,6 +345,17 @@ body.toc-resizing #toc-pane {
 
 .markdown-body pre.mermaid svg {
   max-width: 100%;
+}
+
+/* ---- Task lists --------------------------------------------------------- */
+
+.task-list-item {
+  list-style-type: none;
+}
+
+.task-list-item-checkbox {
+  margin-right: 0.5em;
+  cursor: pointer;
 }
 
 /* ---- Code copy button ------------------------------------------------- */

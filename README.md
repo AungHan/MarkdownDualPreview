@@ -35,6 +35,24 @@ Preview up to **three** Markdown files side by side, each with an embedded
   sequence diagrams, class diagrams, and more) via [Mermaid](https://mermaid.js.org/).
   A malformed diagram shows an inline error instead of breaking the rest of the
   document.
+- **GitHub-style alerts** — `> [!NOTE]`, `> [!TIP]`, `> [!IMPORTANT]`, `> [!WARNING]`,
+  and `> [!CAUTION]` blockquotes render as color-coded callouts.
+- **YAML front matter** rendered as a collapsible metadata table at the top of the
+  document instead of literal `---` text.
+- **Emoji shortcodes** — `:smile:`, `:wave:`, and the rest of the GitHub emoji set
+  render as Unicode characters. Unrecognized shortcodes are left as literal text.
+- **Interactive task list checkboxes** — clicking a `- [ ]` / `- [x]` checkbox in
+  the preview toggles it directly in the source file.
+- **Section breadcrumb** — a sticky bar above the content shows the heading
+  ancestor chain for the section currently in view (e.g. `Guide > Setup >
+  Installation`); click a segment to jump to it.
+- **Table of contents filtering** — type in the nav pane's search box to narrow
+  the heading list to matching sections (and their ancestors).
+- **Reading stats** — word count and estimated reading time shown in the preview
+  footer.
+- **Export to HTML** — render the active document to a self-contained, static
+  HTML file (all CSS inlined, no JavaScript) via **Markdown Dual Preview: Export
+  to HTML** in the Command Palette.
 
 ## Usage
 
@@ -43,6 +61,8 @@ Preview up to **three** Markdown files side by side, each with an embedded
    Command Palette (`Markdown Dual Preview: Open Dual Preview`), or the Explorer
    right-click menu.
 3. Repeat for additional files to view up to three previews at once.
+4. To export, run **Markdown Dual Preview: Export to HTML** from the Command
+   Palette while a Markdown file is active, then pick a save location.
 
 ## Settings
 
@@ -72,6 +92,16 @@ Preview up to **three** Markdown files side by side, each with an embedded
   same trust level as raw HTML) and diagrams have no pan/zoom/export controls.
 - **Diagrams have no sub-diagram scroll-sync anchor**, same granularity as a code
   block: the whole ` ```mermaid ` fence maps to one source line.
+- **Exported HTML has no PDF option** — open the exported file in a browser and
+  use its Print > Save as PDF if you need one.
+- **Exported HTML always uses the light syntax-highlighting theme**, regardless
+  of the browser's or OS's dark mode setting.
+- **Exported HTML resolves local images to absolute `file://` paths** — they load
+  when opened on the same machine, but the file isn't portable to another
+  computer and the paths are visible in the HTML source.
+- **Mermaid diagrams export as their raw source text**, not rendered SVG — diagram
+  rendering requires the browser-side Mermaid script, which the export
+  intentionally omits (no JavaScript in exported files).
 
 ## Development
 
@@ -105,5 +135,12 @@ loaded.
 - The webview (`src/webview/*`) injects content, builds the nav pane, and handles
   scroll sync under a strict Content-Security-Policy (nonce-allowed script, all
   styles loaded as files). `codeCopy.ts` attaches hover-reveal copy buttons to
-  every `<pre>` element after each content update. `zoomController.ts` maps
-  Ctrl+wheel events to CSS `zoom` and persists the level via `vscode.setState`.
+  every `<pre>` element after each content update. `checkboxDecorator.ts` wires
+  task-list checkbox clicks back to the extension host, which validates the
+  exact `[ ]`/`[x]` marker before editing the source. `breadcrumb.ts` derives
+  the heading ancestor chain from the same table-of-contents tree the nav pane
+  uses. `zoomController.ts` maps Ctrl+wheel events to CSS `zoom` and persists
+  the level via `vscode.setState`.
+- `src/export/exportHtml.ts` reuses the same host-side renderer to produce a
+  self-contained HTML file: all CSS is inlined and the document ships with no
+  `<script>` tag and its own `script-src 'none'` Content-Security-Policy.

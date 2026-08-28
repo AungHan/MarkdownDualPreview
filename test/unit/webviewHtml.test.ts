@@ -46,6 +46,7 @@ describe('buildWebviewHtml', () => {
     expect(html).toContain('id="toc-list"');
     expect(html).toContain('id="toc-resizer"');
     expect(html).toContain('id="content"');
+    expect(html).toContain('id="breadcrumb"');
   });
 
   it('leaves no unresolved template placeholders', () => {
