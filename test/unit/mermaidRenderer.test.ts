@@ -36,7 +36,12 @@ describe('decorateMermaidBlocks', () => {
     await decorateMermaidBlocks(root, NONCE);
 
     expect(initializeMock).toHaveBeenCalledWith(
-      expect.objectContaining({ securityLevel: 'strict', htmlLabels: false, startOnLoad: false })
+      expect.objectContaining({
+        securityLevel: 'strict',
+        htmlLabels: false,
+        startOnLoad: false,
+        suppressErrorRendering: true
+      })
     );
   });
 
@@ -245,6 +250,7 @@ describe('decorateMermaidBlocks theme detection', () => {
       startOnLoad: false,
       securityLevel: 'strict',
       htmlLabels: false,
+      suppressErrorRendering: true,
       theme: 'dark'
     });
   });

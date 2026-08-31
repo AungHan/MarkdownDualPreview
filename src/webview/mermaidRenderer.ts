@@ -23,13 +23,23 @@ function detectMermaidTheme(): 'default' | 'dark' {
  * Re-initializes only when the detected theme differs from the last applied
  * one — `mermaid.initialize()` is safe to call repeatedly, but a redundant
  * call on every render would be wasted work.
+ *
+ * `suppressErrorRendering: true` makes a parse error reject `mermaid.render()`
+ * instead of resolving with Mermaid's own built-in "bomb" error SVG — without
+ * it, `decorateMermaidBlocks`'s `catch` branch below never runs.
  */
 function ensureThemeApplied(): void {
   const theme = detectMermaidTheme();
   if (theme === currentThemeName) {
     return;
   }
-  mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', htmlLabels: false, theme });
+  mermaid.initialize({
+    startOnLoad: false,
+    securityLevel: 'strict',
+    htmlLabels: false,
+    suppressErrorRendering: true,
+    theme
+  });
   currentThemeName = theme;
 }
 
