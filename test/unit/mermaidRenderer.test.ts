@@ -124,3 +124,163 @@ describe('decorateMermaidBlocks', () => {
     expect(renderMock).not.toHaveBeenCalled();
   });
 });
+
+describe('decorateMermaidBlocks theme detection', () => {
+  it('initializes mermaid with theme "dark" when body has class vscode-dark', async () => {
+    renderMock.mockResolvedValue({ svg: '<svg>ok</svg>' });
+    const root = setBody('<pre class="mermaid" data-line="0">graph TD; A--&gt;B;</pre>');
+    document.body.className = 'vscode-light';
+    await decorateMermaidBlocks(root, NONCE);
+    initializeMock.mockClear();
+
+    document.body.className = 'vscode-dark';
+    await decorateMermaidBlocks(root, NONCE);
+
+    expect(initializeMock).toHaveBeenCalledWith(expect.objectContaining({ theme: 'dark' }));
+  });
+
+  it('initializes mermaid with theme "dark" when body has class vscode-high-contrast', async () => {
+    renderMock.mockResolvedValue({ svg: '<svg>ok</svg>' });
+    const root = setBody('<pre class="mermaid" data-line="0">graph TD; A--&gt;B;</pre>');
+    document.body.className = 'vscode-light';
+    await decorateMermaidBlocks(root, NONCE);
+    initializeMock.mockClear();
+
+    document.body.className = 'vscode-high-contrast';
+    await decorateMermaidBlocks(root, NONCE);
+
+    expect(initializeMock).toHaveBeenCalledWith(expect.objectContaining({ theme: 'dark' }));
+  });
+
+  it('initializes mermaid with theme "default" when body has class vscode-light', async () => {
+    renderMock.mockResolvedValue({ svg: '<svg>ok</svg>' });
+    const root = setBody('<pre class="mermaid" data-line="0">graph TD; A--&gt;B;</pre>');
+    document.body.className = 'vscode-dark';
+    await decorateMermaidBlocks(root, NONCE);
+    initializeMock.mockClear();
+
+    document.body.className = 'vscode-light';
+    await decorateMermaidBlocks(root, NONCE);
+
+    expect(initializeMock).toHaveBeenCalledWith(expect.objectContaining({ theme: 'default' }));
+  });
+
+  it('initializes mermaid with theme "default" when body has class vscode-high-contrast-light', async () => {
+    renderMock.mockResolvedValue({ svg: '<svg>ok</svg>' });
+    const root = setBody('<pre class="mermaid" data-line="0">graph TD; A--&gt;B;</pre>');
+    document.body.className = 'vscode-dark';
+    await decorateMermaidBlocks(root, NONCE);
+    initializeMock.mockClear();
+
+    document.body.className = 'vscode-high-contrast-light';
+    await decorateMermaidBlocks(root, NONCE);
+
+    expect(initializeMock).toHaveBeenCalledWith(expect.objectContaining({ theme: 'default' }));
+  });
+
+  it('skips re-initializing mermaid when the theme has not changed', async () => {
+    renderMock.mockResolvedValue({ svg: '<svg>ok</svg>' });
+    const root = setBody('<pre class="mermaid" data-line="0">graph TD; A--&gt;B;</pre>');
+    document.body.className = 'vscode-dark';
+    await decorateMermaidBlocks(root, NONCE);
+    initializeMock.mockClear();
+
+    await decorateMermaidBlocks(root, NONCE);
+
+    expect(initializeMock).not.toHaveBeenCalled();
+  });
+
+  it('re-initializes mermaid when the theme changes on a later call', async () => {
+    renderMock.mockResolvedValue({ svg: '<svg>ok</svg>' });
+    const root = setBody('<pre class="mermaid" data-line="0">graph TD; A--&gt;B;</pre>');
+    document.body.className = 'vscode-light';
+    await decorateMermaidBlocks(root, NONCE);
+    initializeMock.mockClear();
+
+    document.body.className = 'vscode-dark';
+    await decorateMermaidBlocks(root, NONCE);
+
+    expect(initializeMock).toHaveBeenCalledWith(expect.objectContaining({ theme: 'dark' }));
+  });
+
+  it('re-renders a diagram from its original source, not the rendered SVG, after a theme change', async () => {
+    renderMock.mockResolvedValue({ svg: '<svg><g>diagram</g></svg>' });
+    const root = setBody('<pre class="mermaid" data-line="4">graph TD; A--&gt;B;</pre>');
+    document.body.className = 'vscode-light';
+    await decorateMermaidBlocks(root, NONCE);
+    renderMock.mockClear();
+
+    document.body.className = 'vscode-dark';
+    await decorateMermaidBlocks(root, NONCE);
+
+    expect(renderMock).toHaveBeenCalledWith(expect.any(String), 'graph TD; A-->B;');
+  });
+
+  it('preserves the element node and its data-line attribute across a theme-change re-render', async () => {
+    renderMock.mockResolvedValue({ svg: '<svg>ok</svg>' });
+    const root = setBody('<pre class="mermaid" data-line="9">graph TD; A--&gt;B;</pre>');
+    const elBefore = root.querySelector('.mermaid');
+    document.body.className = 'vscode-light';
+    await decorateMermaidBlocks(root, NONCE);
+
+    document.body.className = 'vscode-dark';
+    await decorateMermaidBlocks(root, NONCE);
+
+    const elAfter = root.querySelector('.mermaid');
+    expect(elAfter).toBe(elBefore);
+    expect(elAfter?.getAttribute('data-line')).toBe('9');
+  });
+
+  it('re-initializes with the full security-critical options set, not just theme, on a theme change', async () => {
+    renderMock.mockResolvedValue({ svg: '<svg>ok</svg>' });
+    const root = setBody('<pre class="mermaid" data-line="0">graph TD; A--&gt;B;</pre>');
+    document.body.className = 'vscode-light';
+    await decorateMermaidBlocks(root, NONCE);
+    initializeMock.mockClear();
+
+    document.body.className = 'vscode-dark';
+    await decorateMermaidBlocks(root, NONCE);
+
+    expect(initializeMock).toHaveBeenCalledWith({
+      startOnLoad: false,
+      securityLevel: 'strict',
+      htmlLabels: false,
+      theme: 'dark'
+    });
+  });
+
+  it('re-renders an errored diagram from its original source on a later theme-change call', async () => {
+    renderMock.mockRejectedValueOnce(new Error('bad diagram')).mockResolvedValueOnce({ svg: '<svg>ok</svg>' });
+    const root = setBody('<pre class="mermaid" data-line="0">bad syntax</pre>');
+    document.body.className = 'vscode-light';
+    await decorateMermaidBlocks(root, NONCE);
+    expect(root.querySelector('.mermaid')?.innerHTML).toContain('mermaid-error');
+
+    document.body.className = 'vscode-dark';
+    await decorateMermaidBlocks(root, NONCE);
+
+    expect(renderMock).toHaveBeenLastCalledWith(expect.any(String), 'bad syntax');
+    expect(root.querySelector('.mermaid')?.innerHTML).toContain('<svg>');
+  });
+
+  it('applies only the latest call result when an older call is still in flight', async () => {
+    const root = setBody('<pre class="mermaid" data-line="0">graph TD; A--&gt;B;</pre>');
+    document.body.className = 'vscode-light';
+
+    let resolveStale: (value: { svg: string }) => void = () => {};
+    const stalePromise = new Promise<{ svg: string }>((resolve) => {
+      resolveStale = resolve;
+    });
+    renderMock.mockReturnValueOnce(stalePromise);
+    const staleCall = decorateMermaidBlocks(root, NONCE);
+
+    renderMock.mockResolvedValueOnce({ svg: '<svg><g>fresh</g></svg>' });
+    document.body.className = 'vscode-dark';
+    await decorateMermaidBlocks(root, NONCE);
+
+    resolveStale({ svg: '<svg><g>stale</g></svg>' });
+    await staleCall;
+
+    expect(root.querySelector('.mermaid')?.innerHTML).toContain('fresh');
+  });
+});

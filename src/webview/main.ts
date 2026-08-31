@@ -161,8 +161,10 @@ window.addEventListener('message', (event: MessageEvent<ToWebviewMessage>) => {
       scroll.revealLine(message.line);
       break;
     case 'themeChanged':
-      // VS Code toggles the body theme class automatically; the scoped hljs
-      // stylesheets react to it, so no explicit work is needed here.
+      // hljs is CSS-scoped to the body class VS Code already flips, so no
+      // work needed there. Mermaid's theme is JS-side config, so re-render
+      // existing diagrams under the new theme.
+      void decorateMermaidBlocks(contentEl, scriptNonce);
       break;
     case 'settingsChanged': {
       const width = message.maxContentWidth > 0 ? `${message.maxContentWidth}px` : 'none';
