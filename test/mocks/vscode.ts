@@ -208,6 +208,10 @@ export const window = {
   showSaveDialog(_options: unknown): Thenable<Uri | undefined> {
     return Promise.resolve(window.saveDialogResult);
   },
+  quickPickResult: undefined as string | undefined,
+  showQuickPick(_items: unknown, _options?: unknown): Thenable<string | undefined> {
+    return Promise.resolve(window.quickPickResult);
+  },
   onDidChangeTextEditorVisibleRanges(listener: (e: unknown) => void): Disposable {
     return window.onDidChangeTextEditorVisibleRangesEmitter.event(listener);
   },
@@ -230,6 +234,8 @@ export const workspace = {
     return Promise.resolve(true);
   },
   fsFiles: new Map<string, Uint8Array>(),
+  /** Overrides the reported size for a URI without needing a real giant buffer in `fsFiles`. */
+  fsFileSizeOverrides: new Map<string, number>(),
   writtenFiles: [] as { uri: Uri; content: Uint8Array }[],
   fs: {
     readFile(uri: Uri): Thenable<Uint8Array> {
@@ -242,6 +248,18 @@ export const workspace = {
     writeFile(uri: Uri, content: Uint8Array): Thenable<void> {
       workspace.writtenFiles.push({ uri, content });
       return Promise.resolve();
+    },
+    stat(uri: Uri): Thenable<{ size: number }> {
+      const key = uri.toString();
+      const override = workspace.fsFileSizeOverrides.get(key);
+      if (override !== undefined) {
+        return Promise.resolve({ size: override });
+      }
+      const content = workspace.fsFiles.get(key);
+      if (!content) {
+        return Promise.reject(new Error(`mock fs: no fixture registered for ${key}`));
+      }
+      return Promise.resolve({ size: content.byteLength });
     }
   },
   getConfiguration(section?: string) {
@@ -299,8 +317,10 @@ export const __test = {
     workspace.configValues.clear();
     workspace.appliedEdits.length = 0;
     workspace.fsFiles.clear();
+    workspace.fsFileSizeOverrides.clear();
     workspace.writtenFiles.length = 0;
     window.saveDialogResult = undefined;
+    window.quickPickResult = undefined;
     env.clipboard.written.length = 0;
     commands.registered.clear();
   }
