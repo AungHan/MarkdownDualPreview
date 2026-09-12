@@ -28,12 +28,14 @@ Preview up to **three** Markdown files side by side, each with an embedded
 
 1. Open a Markdown (`.md`) file, **or** right-click a Markdown file in the Explorer.
 2. Run **Open Dual Preview** — from the editor title bar (the preview icon), the
-   Command Palette (`Markdown Dual Preview: Open Dual Preview`), or the Explorer
-   right-click menu.
+   editor right-click menu, `Ctrl+K D` (`Cmd+K D` on macOS) while the editor is
+   focused, the Command Palette (`Markdown Dual Preview: Open Dual Preview`), or
+   the Explorer right-click menu.
 3. Repeat for additional files to view up to three previews at once.
-4. To export, run **Markdown Dual Preview: Export to HTML** from the Command
-   Palette while a Markdown file is active, pick a save location, then choose
-   whether to embed local images or link to them.
+4. To export, run **Markdown Dual Preview: Export to HTML** — from the editor
+   title bar (the export icon), `Ctrl+K E` (`Cmd+K E` on macOS), or the
+   Command Palette — pick a save location, then choose whether to embed local
+   images or link to them.
 
 ## Settings
 

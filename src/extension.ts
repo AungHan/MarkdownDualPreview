@@ -3,6 +3,30 @@ import { exportHtml } from './export/exportHtml';
 import { createRenderer } from './markdown/renderer';
 import { PreviewManager } from './preview/previewManager';
 
+// Invoked from the Explorer/editor context menu or editor title bar with the
+// clicked/active editor's URI; from the Command Palette or the keybinding
+// with no argument.
+async function resolveTargetDocument(
+  resource: vscode.Uri | undefined
+): Promise<vscode.TextDocument | undefined> {
+  if (resource instanceof vscode.Uri) {
+    try {
+      return await vscode.workspace.openTextDocument(resource);
+    } catch {
+      void vscode.window.showWarningMessage(
+        `Markdown Dual Preview: could not open ${resource.fsPath}.`
+      );
+      return undefined;
+    }
+  }
+
+  const document = vscode.window.activeTextEditor?.document;
+  if (!document) {
+    void vscode.window.showWarningMessage('Markdown Dual Preview: open a Markdown file first.');
+  }
+  return document;
+}
+
 export function activate(context: vscode.ExtensionContext): void {
   const manager = new PreviewManager(context.extensionUri);
   context.subscriptions.push(manager);
@@ -10,37 +34,17 @@ export function activate(context: vscode.ExtensionContext): void {
 
   context.subscriptions.push(
     vscode.commands.registerCommand('markdownDualPreview.open', async (resource?: vscode.Uri) => {
-      // Invoked from the Explorer context menu with the clicked file's URI;
-      // from the editor title bar / Command Palette with no argument.
-      if (resource instanceof vscode.Uri) {
-        try {
-          const document = await vscode.workspace.openTextDocument(resource);
-          manager.openPreview(document);
-        } catch {
-          void vscode.window.showWarningMessage(
-            `Markdown Dual Preview: could not open ${resource.fsPath}.`
-          );
-        }
-        return;
-      }
-
-      const editor = vscode.window.activeTextEditor;
-      if (!editor) {
-        void vscode.window.showWarningMessage('Markdown Dual Preview: open a Markdown file first.');
-        return;
-      }
-      manager.openPreview(editor.document);
+      const document = await resolveTargetDocument(resource);
+      if (!document) return;
+      manager.openPreview(document);
     })
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('markdownDualPreview.exportHtml', async () => {
-      const editor = vscode.window.activeTextEditor;
-      if (!editor) {
-        void vscode.window.showWarningMessage('Markdown Dual Preview: open a Markdown file first.');
-        return;
-      }
-      await exportHtml({ document: editor.document, extensionUri: context.extensionUri, render });
+    vscode.commands.registerCommand('markdownDualPreview.exportHtml', async (resource?: vscode.Uri) => {
+      const document = await resolveTargetDocument(resource);
+      if (!document) return;
+      await exportHtml({ document, extensionUri: context.extensionUri, render });
     })
   );
 }

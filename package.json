@@ -2,7 +2,7 @@
   "name": "markdown-dual-preview",
   "displayName": "Markdown Dual Preview",
   "description": "Preview Markdown files side by side (up to three), each with an embedded section navigation pane.",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "publisher": "aung-han",
   "license": "MIT",
   "repository": {
@@ -44,7 +44,22 @@
       {
         "command": "markdownDualPreview.exportHtml",
         "title": "Export to HTML",
-        "category": "Markdown Dual Preview"
+        "category": "Markdown Dual Preview",
+        "icon": "$(export)"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "markdownDualPreview.open",
+        "key": "ctrl+k d",
+        "mac": "cmd+k d",
+        "when": "editorTextFocus && editorLangId == markdown"
+      },
+      {
+        "command": "markdownDualPreview.exportHtml",
+        "key": "ctrl+k e",
+        "mac": "cmd+k e",
+        "when": "editorTextFocus && editorLangId == markdown"
       }
     ],
     "menus": {
@@ -52,7 +67,19 @@
         {
           "command": "markdownDualPreview.open",
           "when": "editorLangId == markdown",
-          "group": "navigation"
+          "group": "navigation@1"
+        },
+        {
+          "command": "markdownDualPreview.exportHtml",
+          "when": "editorLangId == markdown",
+          "group": "navigation@2"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "markdownDualPreview.open",
+          "when": "editorLangId == markdown",
+          "group": "navigation@30"
         }
       ],
       "commandPalette": [
