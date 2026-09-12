@@ -26,6 +26,13 @@ function open(manager: PreviewManager, d: FakeDoc): void {
   manager.openPreview(d as unknown as Parameters<PreviewManager['openPreview']>[0]);
 }
 
+/** Settles the chain of awaits behind an async settings push (resolve → stat → readFile per file). */
+async function flushCustomCssLoad(): Promise<void> {
+  for (let i = 0; i < 10; i++) {
+    await Promise.resolve();
+  }
+}
+
 beforeEach(() => __test.reset());
 
 describe('PreviewManager', () => {
@@ -214,12 +221,13 @@ describe('PreviewManager', () => {
     expect(manager.maxContentWidth).toBe(850);
   });
 
-  it('posts settingsChanged when webview reports ready', () => {
+  it('posts settingsChanged when webview reports ready', async () => {
     workspace.configValues.set('markdownDualPreview.maxContentWidth', 700);
     const manager = new PreviewManager(EXT_URI);
     open(manager, doc('C:/a.md'));
     const panel = __test.createdPanels[0];
     panel.webview.__fireMessage({ type: 'ready' });
+    await flushCustomCssLoad();
     const settings = panel.webview.posted.find(
       (m): m is { type: string; maxContentWidth: number } =>
         typeof m === 'object' && m !== null && (m as { type?: unknown }).type === 'settingsChanged'
@@ -227,7 +235,7 @@ describe('PreviewManager', () => {
     expect(settings?.maxContentWidth).toBe(700);
   });
 
-  it('pushes settingsChanged to all panels on config change', () => {
+  it('pushes settingsChanged to all panels on config change', async () => {
     const manager = new PreviewManager(EXT_URI);
     open(manager, doc('C:/a.md'));
     open(manager, doc('C:/b.md'));
@@ -240,6 +248,7 @@ describe('PreviewManager', () => {
     workspace.onDidChangeConfigurationEmitter.fire({
       affectsConfiguration: (section: string) => section === 'markdownDualPreview'
     });
+    await flushCustomCssLoad();
 
     const settingsA = panelA.webview.posted
       .slice(beforeA)
@@ -259,6 +268,106 @@ describe('PreviewManager', () => {
     const options = panel.createOptions as { localResourceRoots: { toString(): string }[] };
     const roots = options.localResourceRoots.map((r) => r.toString());
     expect(roots).toContain(Uri.file('C:/').toString());
+  });
+
+  it('includes loaded custom CSS in settingsChanged on ready', async () => {
+    workspace.workspaceFolders = [{ uri: Uri.file('C:/project') }];
+    workspace.configValues.set('markdownDualPreview.customCss', ['./theme.css']);
+    workspace.fsFiles.set(Uri.file('C:/project/theme.css').toString(), new TextEncoder().encode('.x{color:red}'));
+    const manager = new PreviewManager(EXT_URI);
+    open(manager, doc('C:/project/a.md'));
+    const panel = __test.createdPanels[0];
+    panel.webview.__fireMessage({ type: 'ready' });
+    await flushCustomCssLoad();
+    const settings = panel.webview.posted.find(
+      (m) => (m as { type?: unknown }).type === 'settingsChanged'
+    ) as { customCss: string };
+    expect(settings.customCss).toContain('.x{color:red}');
+  });
+
+  it('re-pushes settingsChanged when a resolved custom CSS file is saved', async () => {
+    workspace.workspaceFolders = [{ uri: Uri.file('C:/project') }];
+    workspace.configValues.set('markdownDualPreview.customCss', ['./theme.css']);
+    workspace.fsFiles.set(Uri.file('C:/project/theme.css').toString(), new TextEncoder().encode('.v1{}'));
+    const manager = new PreviewManager(EXT_URI);
+    open(manager, doc('C:/project/a.md'));
+    const panel = __test.createdPanels[0];
+    panel.webview.__fireMessage({ type: 'ready' });
+    await flushCustomCssLoad();
+
+    workspace.fsFiles.set(Uri.file('C:/project/theme.css').toString(), new TextEncoder().encode('.v2{}'));
+    const before = panel.webview.posted.length;
+    workspace.onDidSaveTextDocumentEmitter.fire({ uri: Uri.file('C:/project/theme.css') });
+    await flushCustomCssLoad();
+
+    const settings = panel.webview.posted
+      .slice(before)
+      .find((m) => (m as { type?: unknown }).type === 'settingsChanged') as { customCss: string };
+    expect(settings.customCss).toContain('.v2{}');
+  });
+
+  it('does not re-push settings when an unrelated document is saved', async () => {
+    workspace.workspaceFolders = [{ uri: Uri.file('C:/project') }];
+    workspace.configValues.set('markdownDualPreview.customCss', ['./theme.css']);
+    workspace.fsFiles.set(Uri.file('C:/project/theme.css').toString(), new TextEncoder().encode('.v1{}'));
+    const manager = new PreviewManager(EXT_URI);
+    open(manager, doc('C:/project/a.md'));
+    const panel = __test.createdPanels[0];
+    panel.webview.__fireMessage({ type: 'ready' });
+    await flushCustomCssLoad();
+
+    const before = panel.webview.posted.length;
+    workspace.onDidSaveTextDocumentEmitter.fire({ uri: Uri.file('C:/project/a.md') });
+    await flushCustomCssLoad();
+
+    expect(panel.webview.posted.slice(before)).toHaveLength(0);
+  });
+
+  it('warns exactly once (not per panel) for an invalid customCss entry', async () => {
+    workspace.configValues.set('markdownDualPreview.customCss', ['./theme.txt']);
+    const manager = new PreviewManager(EXT_URI);
+    open(manager, doc('C:/a.md'));
+    open(manager, doc('C:/b.md'));
+    workspace.onDidChangeConfigurationEmitter.fire({
+      affectsConfiguration: (section: string) => section === 'markdownDualPreview'
+    });
+    await flushCustomCssLoad();
+    expect(window.warningMessages).toHaveLength(1);
+  });
+
+  it('warns exactly once when two panels independently report ready with the same invalid entry', async () => {
+    workspace.configValues.set('markdownDualPreview.customCss', ['./theme.txt']);
+    const manager = new PreviewManager(EXT_URI);
+    open(manager, doc('C:/a.md'));
+    open(manager, doc('C:/b.md'));
+    __test.createdPanels[0].webview.__fireMessage({ type: 'ready' });
+    __test.createdPanels[1].webview.__fireMessage({ type: 'ready' });
+    await flushCustomCssLoad();
+    expect(window.warningMessages).toHaveLength(1);
+  });
+
+  it('warns again if the invalid entry changes after a valid period', async () => {
+    workspace.workspaceFolders = [{ uri: Uri.file('C:/project') }];
+    workspace.configValues.set('markdownDualPreview.customCss', ['./a.txt']);
+    const manager = new PreviewManager(EXT_URI);
+    open(manager, doc('C:/project/x.md'));
+    const panel = __test.createdPanels[0];
+    panel.webview.__fireMessage({ type: 'ready' });
+    await flushCustomCssLoad();
+
+    workspace.configValues.set('markdownDualPreview.customCss', []);
+    workspace.onDidChangeConfigurationEmitter.fire({
+      affectsConfiguration: (section: string) => section === 'markdownDualPreview'
+    });
+    await flushCustomCssLoad();
+
+    workspace.configValues.set('markdownDualPreview.customCss', ['./b.txt']);
+    workspace.onDidChangeConfigurationEmitter.fire({
+      affectsConfiguration: (section: string) => section === 'markdownDualPreview'
+    });
+    await flushCustomCssLoad();
+
+    expect(window.warningMessages).toHaveLength(2);
   });
 
   it('copies text to clipboard when webview posts copyText', () => {

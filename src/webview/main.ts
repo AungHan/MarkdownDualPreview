@@ -2,6 +2,7 @@ import type { FromWebviewMessage, ToWebviewMessage } from '../shared/messages';
 import { createBreadcrumb } from './breadcrumb';
 import { decorateCheckboxes } from './checkboxDecorator';
 import { decorateCodeBlocks } from './codeCopy';
+import { applyCustomCss } from './customCssApplier';
 import { decorateMermaidBlocks } from './mermaidRenderer';
 import { createScrollController } from './scrollController';
 import { createZoomController } from './zoomController';
@@ -169,6 +170,7 @@ window.addEventListener('message', (event: MessageEvent<ToWebviewMessage>) => {
     case 'settingsChanged': {
       const width = message.maxContentWidth > 0 ? `${message.maxContentWidth}px` : 'none';
       contentEl.style.maxWidth = width;
+      applyCustomCss(message.customCss, scriptNonce);
       break;
     }
   }

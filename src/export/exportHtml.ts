@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { classifyResource } from '../markdown/resourcePath';
+import { formatCustomCssWarning, loadCustomCss, resolveCustomCssFromConfig } from '../preview/customCss';
 import type { Renderer } from '../markdown/renderer';
 
 export interface ExportHtmlOptions {
@@ -14,6 +15,7 @@ export interface StandaloneHtmlParams {
   readonly previewCss: string;
   readonly hljsCss: string;
   readonly hljsDarkCss: string;
+  readonly customCss?: string;
 }
 
 /** Local image references over this size are left as `file://` even when embedding is chosen. */
@@ -87,6 +89,16 @@ export function buildPrintCss(): string {
 }`;
 }
 
+/**
+ * Neutralizes a `</style` sequence inside raw CSS text before it is
+ * interpolated into a `<style>` element. `<style>` is an HTML raw-text
+ * element — entities are never decoded inside it — so `escapeHtml` cannot be
+ * used here; the closing tag itself must be broken up instead.
+ */
+function escapeStyleClose(css: string): string {
+  return css.replace(/<\/(style)/gi, '<\\/$1');
+}
+
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, '&amp;')
@@ -105,7 +117,7 @@ function escapeHtml(value: string): string {
  * Contract 0005 D1/D2.
  */
 export function buildStandaloneHtml(params: StandaloneHtmlParams): string {
-  const { title, contentHtml, previewCss, hljsCss, hljsDarkCss } = params;
+  const { title, contentHtml, previewCss, hljsCss, hljsDarkCss, customCss } = params;
   const csp = [`default-src 'none'`, `script-src 'none'`, `style-src 'unsafe-inline'`, `img-src file: data: https:`, `font-src data:`].join('; ');
 
   return `<!DOCTYPE html>
@@ -122,7 +134,7 @@ export function buildStandaloneHtml(params: StandaloneHtmlParams): string {
 <style>${previewCss}</style>
 <style>${buildLayoutCss()}</style>
 <style>${buildPrintCss()}</style>
-</head>
+${customCss ? `<style>${escapeStyleClose(customCss)}</style>\n` : ''}</head>
 <body class="vscode-light">
 <main class="markdown-body">${contentHtml}</main>
 </body>
@@ -307,13 +319,22 @@ export async function exportHtml(options: ExportHtmlOptions): Promise<void> {
       readMediaFile(extensionUri, 'hljs-github-light.css'),
       readMediaFile(extensionUri, 'hljs-github-dark.css')
     ]);
+    const resolvedCustomCss = resolveCustomCssFromConfig(
+      vscode.workspace.getConfiguration('markdownDualPreview'),
+      vscode.workspace.workspaceFolders?.[0]?.uri.path
+    );
+    if (resolvedCustomCss.rejected.length > 0) {
+      void vscode.window.showWarningMessage(formatCustomCssWarning(resolvedCustomCss.rejected));
+    }
+    const customCss = await loadCustomCss(resolvedCustomCss);
 
     const standaloneHtml = buildStandaloneHtml({
       title: basenameWithoutExt(document.uri),
       contentHtml: html,
       previewCss,
       hljsCss,
-      hljsDarkCss
+      hljsDarkCss,
+      customCss
     });
 
     await vscode.workspace.fs.writeFile(targetUri, Buffer.from(standaloneHtml, 'utf8'));

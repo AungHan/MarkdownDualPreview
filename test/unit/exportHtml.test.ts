@@ -141,6 +141,40 @@ describe('buildStandaloneHtml', () => {
     expect(html).toContain('@media print');
     expect(html).toContain('break-inside: avoid');
   });
+
+  it('inlines customCss last when provided, and omits the block when absent', () => {
+    const withCustom = buildStandaloneHtml({
+      title: 'My Doc',
+      contentHtml: '<p>hello</p>',
+      previewCss: '.p{}',
+      hljsCss: '',
+      hljsDarkCss: '',
+      customCss: '.custom{color:red}'
+    });
+    expect(withCustom.indexOf('.p{}')).toBeLessThan(withCustom.indexOf('.custom{color:red}'));
+
+    const withoutCustom = buildStandaloneHtml({
+      title: 'My Doc',
+      contentHtml: '<p>hello</p>',
+      previewCss: '',
+      hljsCss: '',
+      hljsDarkCss: ''
+    });
+    expect(withoutCustom).not.toContain('.custom{color:red}');
+  });
+
+  it('neutralizes a </style> sequence inside customCss so it cannot break out of the style element', () => {
+    const html = buildStandaloneHtml({
+      title: 'My Doc',
+      contentHtml: '<p>hello</p>',
+      previewCss: '',
+      hljsCss: '',
+      hljsDarkCss: '',
+      customCss: '/* </style><img src=x onerror=alert(1)> */'
+    });
+    expect(html).not.toContain('</style><img');
+    expect(html).toContain('<\\/style>');
+  });
 });
 
 describe('buildLayoutCss', () => {
@@ -299,6 +333,79 @@ describe('exportHtml', () => {
     });
     const text = Buffer.from(workspace.writtenFiles[0].content).toString('utf8');
     expect(text).toContain('src="file:///C:/project/img/shot.png"');
+  });
+
+  it('inlines resolved custom CSS after preview.css and the print block', async () => {
+    registerMediaFixtures();
+    workspace.workspaceFolders = [{ uri: Uri.file('C:/project') }];
+    workspace.configValues.set('markdownDualPreview.customCss', ['./theme.css']);
+    workspace.fsFiles.set(
+      Uri.file('C:/project/theme.css').toString(),
+      new TextEncoder().encode('.custom-marker{}')
+    );
+    window.saveDialogResult = Uri.file('C:/project/readme.html');
+    await exportHtml({
+      document: doc('C:/project/readme.md', '# Hi\n') as unknown as Parameters<
+        typeof exportHtml
+      >[0]['document'],
+      extensionUri: EXT_URI,
+      render: identityRender
+    });
+    const text = Buffer.from(workspace.writtenFiles[0].content).toString('utf8');
+    expect(text).toContain('.custom-marker{}');
+    expect(text.indexOf('@media print')).toBeLessThan(text.indexOf('.custom-marker{}'));
+  });
+
+  it('still writes the export when a configured custom CSS file is missing', async () => {
+    registerMediaFixtures();
+    workspace.workspaceFolders = [{ uri: Uri.file('C:/project') }];
+    workspace.configValues.set('markdownDualPreview.customCss', ['./missing.css']);
+    window.saveDialogResult = Uri.file('C:/project/readme.html');
+    await exportHtml({
+      document: doc('C:/project/readme.md', '# Hi\n') as unknown as Parameters<
+        typeof exportHtml
+      >[0]['document'],
+      extensionUri: EXT_URI,
+      render: identityRender
+    });
+    expect(workspace.writtenFiles).toHaveLength(1);
+  });
+
+  it('warns when a configured customCss entry is invalid, but still exports', async () => {
+    registerMediaFixtures();
+    workspace.workspaceFolders = [{ uri: Uri.file('C:/project') }];
+    workspace.configValues.set('markdownDualPreview.customCss', ['./notes.txt']);
+    window.saveDialogResult = Uri.file('C:/project/readme.html');
+    await exportHtml({
+      document: doc('C:/project/readme.md', '# Hi\n') as unknown as Parameters<
+        typeof exportHtml
+      >[0]['document'],
+      extensionUri: EXT_URI,
+      render: identityRender
+    });
+    expect(workspace.writtenFiles).toHaveLength(1);
+    expect(window.warningMessages).toHaveLength(1);
+    expect(window.warningMessages[0]).toContain('notes.txt');
+  });
+
+  it('never reads a non-.css customCss entry', async () => {
+    registerMediaFixtures();
+    workspace.workspaceFolders = [{ uri: Uri.file('C:/project') }];
+    workspace.configValues.set('markdownDualPreview.customCss', ['./notes.txt']);
+    workspace.fsFiles.set(
+      Uri.file('C:/project/notes.txt').toString(),
+      new TextEncoder().encode('should-not-appear')
+    );
+    window.saveDialogResult = Uri.file('C:/project/readme.html');
+    await exportHtml({
+      document: doc('C:/project/readme.md', '# Hi\n') as unknown as Parameters<
+        typeof exportHtml
+      >[0]['document'],
+      extensionUri: EXT_URI,
+      render: identityRender
+    });
+    const text = Buffer.from(workspace.writtenFiles[0].content).toString('utf8');
+    expect(text).not.toContain('should-not-appear');
   });
 
   it('shows an error message and writes nothing when a media asset cannot be read', async () => {

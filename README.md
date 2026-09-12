@@ -22,6 +22,7 @@ Preview up to **three** Markdown files side by side, each with an embedded
 - Section breadcrumb bar
 - Reading stats (word count, est. reading time)
 - Export to standalone HTML — dark-mode-aware highlighting, print-tuned CSS, optional image embedding
+- Custom CSS override — your own `.css` files, applied last, in both the preview and export
 
 ## Usage
 
@@ -40,6 +41,7 @@ Preview up to **three** Markdown files side by side, each with an embedded
 |---|---|---|
 | `markdownDualPreview.maxPreviews` | `2` | Maximum previews open at once (1–3). Lowering it doesn't close previews already open. |
 | `markdownDualPreview.maxContentWidth` | `0` | Maximum width of the rendered content in pixels. `0` means full width. Set to e.g. `900` to constrain the text column for readability. |
+| `markdownDualPreview.customCss` | `[]` | Local `.css` file paths (absolute or workspace-relative), applied last in both the preview and the export. Saving one of these files refreshes open previews. |
 
 ## Development
 

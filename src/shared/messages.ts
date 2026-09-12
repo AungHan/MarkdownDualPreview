@@ -25,7 +25,7 @@ export type ToWebviewMessage =
   | { readonly type: 'updateContent'; readonly html: string; readonly toc: readonly TocNode[] }
   | { readonly type: 'revealLine'; readonly line: number }
   | { readonly type: 'themeChanged'; readonly kind: ThemeKind }
-  | { readonly type: 'settingsChanged'; readonly maxContentWidth: number };
+  | { readonly type: 'settingsChanged'; readonly maxContentWidth: number; readonly customCss: string };
 
 /** Messages sent from the webview back to the extension host. */
 export type FromWebviewMessage =

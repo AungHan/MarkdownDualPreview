@@ -2,7 +2,7 @@
   "name": "markdown-dual-preview",
   "displayName": "Markdown Dual Preview",
   "description": "Preview Markdown files side by side (up to three), each with an embedded section navigation pane.",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "publisher": "aung-han",
   "license": "MIT",
   "repository": {
@@ -16,6 +16,11 @@
   },
   "engines": {
     "vscode": "^1.85.0"
+  },
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false
+    }
   },
   "keywords": [
     "markdown",
@@ -83,6 +88,13 @@
           "default": 0,
           "minimum": 0,
           "markdownDescription": "Maximum width of the rendered content in pixels. Set to `0` for full width (no limit). A value like `900` constrains the text column for readability."
+        },
+        "markdownDualPreview.customCss": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "scope": "window",
+          "markdownDescription": "Local `.css` file paths applied last in the preview and export, overriding the built-in styles. Absolute paths or paths relative to the workspace folder. Remote URLs are not supported."
         }
       }
     }

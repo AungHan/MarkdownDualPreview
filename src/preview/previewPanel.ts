@@ -161,8 +161,8 @@ export class PreviewPanel {
     this.post({ type: 'themeChanged', kind: toThemeKind(kind) });
   }
 
-  postSettings(maxContentWidth: number): void {
-    this.post({ type: 'settingsChanged', maxContentWidth });
+  postSettings(maxContentWidth: number, customCss: string): void {
+    this.post({ type: 'settingsChanged', maxContentWidth, customCss });
   }
 
   dispose(): void {

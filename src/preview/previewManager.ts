@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { formatCustomCssWarning, loadCustomCss, resolveCustomCssFromConfig, type ResolvedCustomCss } from './customCss';
 import { createRenderer, type Renderer } from '../markdown/renderer';
 import { debounce, type Debounced } from '../util/debounce';
 import { docKey } from '../util/docKey';
@@ -28,6 +29,8 @@ export class PreviewManager implements vscode.Disposable {
   private readonly debouncers = new Map<string, Debounced<[vscode.TextDocument]>>();
   private readonly disposables: vscode.Disposable[] = [];
   private readonly render: Renderer;
+  /** The last rejected-entries set a warning was already shown for; `null` once cleared/never warned. */
+  private lastWarnedCustomCssRejection: string | null = null;
 
   constructor(private readonly extensionUri: vscode.Uri, render: Renderer = createRenderer()) {
     this.render = render;
@@ -37,9 +40,10 @@ export class PreviewManager implements vscode.Disposable {
       vscode.window.onDidChangeActiveColorTheme((theme) => this.onThemeChanged(theme.kind)),
       vscode.workspace.onDidChangeConfiguration((e) => {
         if (e.affectsConfiguration(CONFIG_SECTION)) {
-          this.pushSettingsToAll();
+          void this.pushSettingsToAll();
         }
-      })
+      }),
+      vscode.workspace.onDidSaveTextDocument((document) => this.onDocumentSaved(document))
     );
   }
 
@@ -131,7 +135,7 @@ export class PreviewManager implements vscode.Disposable {
     );
 
     const panel = new PreviewPanel(webviewPanel, document, this.render, this.extensionUri);
-    panel.onReady(() => panel.postSettings(this.maxContentWidth));
+    panel.onReady(() => void this.pushSettingsTo(panel));
     const scrollSync = new ScrollSync(panel);
     // Release by panel identity, not by key: a rename can re-key the panel, so
     // the key captured here may be stale by the time the panel is disposed.
@@ -225,10 +229,57 @@ export class PreviewManager implements vscode.Disposable {
     }
   }
 
-  private pushSettingsToAll(): void {
+  /**
+   * `customCss` entries are resolved against the first open workspace
+   * folder — the common single-root case matches "the workspace folder
+   * containing the previewed document" exactly; a multi-root workspace using
+   * a relative entry should use an absolute path instead.
+   */
+  private resolveCustomCssSetting(): ResolvedCustomCss {
+    return resolveCustomCssFromConfig(
+      vscode.workspace.getConfiguration(CONFIG_SECTION),
+      vscode.workspace.workspaceFolders?.[0]?.uri.path
+    );
+  }
+
+  /**
+   * Resolves and loads the current custom CSS. A rejected-entry warning is
+   * shown at most once per distinct rejected set — `pushSettingsTo` fires
+   * independently for every panel's own `ready` event, so without this a
+   * single misconfigured entry would pop one warning dialog per open preview
+   * instead of one overall.
+   */
+  private async currentCustomCss(): Promise<string> {
+    const resolved = this.resolveCustomCssSetting();
+    const rejectedKey = resolved.rejected.join(' ');
+    if (resolved.rejected.length > 0 && rejectedKey !== this.lastWarnedCustomCssRejection) {
+      this.lastWarnedCustomCssRejection = rejectedKey;
+      void vscode.window.showWarningMessage(formatCustomCssWarning(resolved.rejected));
+    } else if (resolved.rejected.length === 0) {
+      this.lastWarnedCustomCssRejection = null;
+    }
+    return loadCustomCss(resolved);
+  }
+
+  private async pushSettingsTo(panel: PreviewPanel): Promise<void> {
+    panel.postSettings(this.maxContentWidth, await this.currentCustomCss());
+  }
+
+  private async pushSettingsToAll(): Promise<void> {
     const width = this.maxContentWidth;
+    const customCss = await this.currentCustomCss();
     for (const panel of this.panels.values()) {
-      panel.postSettings(width);
+      panel.postSettings(width, customCss);
+    }
+  }
+
+  /** Re-pushes settings to every panel when a saved document is one of the resolved custom CSS files. */
+  private onDocumentSaved(document: vscode.TextDocument): void {
+    const resolved = this.resolveCustomCssSetting();
+    const savedKey = docKey(document.uri);
+    const isCustomCssFile = resolved.paths.some((path) => docKey(vscode.Uri.file(path)) === savedKey);
+    if (isCustomCssFile) {
+      void this.pushSettingsToAll();
     }
   }
 }

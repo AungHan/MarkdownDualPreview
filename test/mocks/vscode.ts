@@ -227,6 +227,7 @@ export const workspace = {
   appliedEdits: [] as WorkspaceEdit[],
   onDidChangeTextDocumentEmitter: new EventEmitter<unknown>(),
   onDidCloseTextDocumentEmitter: new EventEmitter<unknown>(),
+  onDidSaveTextDocumentEmitter: new EventEmitter<unknown>(),
   onDidRenameFilesEmitter: new EventEmitter<unknown>(),
   onDidChangeConfigurationEmitter: new EventEmitter<unknown>(),
   applyEdit(edit: WorkspaceEdit): Thenable<boolean> {
@@ -277,6 +278,9 @@ export const workspace = {
   onDidCloseTextDocument(listener: (e: unknown) => void): Disposable {
     return workspace.onDidCloseTextDocumentEmitter.event(listener);
   },
+  onDidSaveTextDocument(listener: (e: unknown) => void): Disposable {
+    return workspace.onDidSaveTextDocumentEmitter.event(listener);
+  },
   onDidRenameFiles(listener: (e: unknown) => void): Disposable {
     return workspace.onDidRenameFilesEmitter.event(listener);
   },
@@ -323,5 +327,15 @@ export const __test = {
     window.quickPickResult = undefined;
     env.clipboard.written.length = 0;
     commands.registered.clear();
+    // Replace rather than clear-in-place: a PreviewManager from a prior test
+    // that was never disposed would otherwise stay subscribed forever and
+    // react to events fired by later, unrelated tests.
+    workspace.onDidChangeTextDocumentEmitter = new EventEmitter<unknown>();
+    workspace.onDidCloseTextDocumentEmitter = new EventEmitter<unknown>();
+    workspace.onDidSaveTextDocumentEmitter = new EventEmitter<unknown>();
+    workspace.onDidRenameFilesEmitter = new EventEmitter<unknown>();
+    workspace.onDidChangeConfigurationEmitter = new EventEmitter<unknown>();
+    window.onDidChangeTextEditorVisibleRangesEmitter = new EventEmitter<unknown>();
+    window.onDidChangeActiveColorThemeEmitter = new EventEmitter<{ kind: ColorThemeKind }>();
   }
 };
